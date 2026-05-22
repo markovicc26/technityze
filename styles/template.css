@@ -1,0 +1,2293 @@
+/* Template styles — same order as the original HTML link tags. */
+/* Paths are relative to this file; assets in url() inside those CSS files resolve from public/css/. */
+@import "../public/css/loader.css";
+@import "../public/css/plugins.css";
+@import "../public/css/main.css";
+@import "./menu-open.css";
+.image-auto {
+  /* width: auto !important; */
+  height: auto !important;
+}
+
+/* ---------- Technityze brand overrides ---------- */
+
+/* Accent color: technityze purple. */
+:root,
+[color-scheme="light"],
+[color-scheme="dark"] {
+  --accent--light: #6B1FD6;
+  --accent--dark: #6B1FD6;
+  --accent: #6B1FD6;
+}
+
+/* Force next/font CSS variables (Manrope, JetBrains Mono) over the
+   google-CDN imports in main.css. Set here instead of as inline body
+   style to avoid hydration mismatch from the cookie-aware layout. */
+body {
+  --_font-default: var(--font-manrope);
+  --_font-accent: var(--font-jetbrains-mono);
+}
+
+/* Hero - force everything in the hero to render in white over the
+   dark video, regardless of light/dark theme. */
+.technityze-hero {
+  --color-text: #ffffff;
+}
+.technityze-hero .mxd-hero-06__wrap,
+.technityze-hero .mxd-hero-06__wrap .tag,
+.technityze-hero .mxd-hero-06__wrap p {
+  color: #ffffff;
+}
+
+/* Hero "fog" overlay: combines a real backdrop-filter blur over the video
+   with an explicit dark gradient so the effect is visible even where the
+   page background is solid black (under the video). The overlay starts
+   visible at scroll=0 (no scroll required) and grows upward as the user
+   scrolls toward the next section.
+
+   --technityze-hero-blur-progress is driven by the GSAP scrollTrigger
+   in Hero.tsx and goes from 0 -> 1. */
+.technityze-hero {
+  --technityze-hero-blur-progress: 0;
+}
+/* Hero custom blur disabled - we are diagnosing why the Technityze global
+   .blur-container only appears after the first scroll. */
+.technityze-hero-blur {
+  display: none;
+}
+
+/* Light-mode hero treatment: a cream blend-mode overlay sits above the
+   video so the dark liquid-metal blob reads as a soft glassy shape on
+   cream instead of a stark black background. Hidden in dark mode. */
+.technityze-hero .mxd-hero-06__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: transparent;
+  mix-blend-mode: normal;
+  z-index: 1;
+  -moz-transition: background-color 0.4s ease;
+  transition: background-color 0.4s ease;
+}
+[color-scheme="light"] .technityze-hero .mxd-hero-06__media::after {
+  background-color: rgba(238, 234, 232, 0.78);
+  mix-blend-mode: lighten;
+  /* Overlay must stay behind the wordmark + tag content so it does not
+     wash them out. The wrap has z-index:1, media stays at default. */
+  z-index: 0;
+}
+/* Light-mode hero text turns dark-purple/black for legibility against
+   the cream blob. */
+/* Light-mode hero copy: force black on every text element inside the
+   hero so they remain legible against the cream blob. */
+html[color-scheme="light"] .technityze-hero,
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__wrap,
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__wrap .tag,
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__wrap p,
+html[color-scheme="light"] .technityze-hero-headline h2,
+html[color-scheme="light"] .technityze-hero-headline h2 *,
+html[color-scheme="light"] .technityze-hero-bottom .fullwidth-text__content,
+html[color-scheme="light"] .technityze-hero-bottom .fullwidth-text__content * {
+  color: #0f0f0f !important;
+}
+html[color-scheme="light"] .technityze-hero {
+  --color-text: #0f0f0f;
+}
+/* Hero tag columns in light mode. The Technityze defaults set color via
+   --nl-white / --nl-white-06 on .tag-permanent / .tag-permanent-medium.
+   Highest specificity (html prefix + descendant chain + tag classes) +
+   !important guarantees override. */
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__tags,
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__tags *,
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__tags ul li span.tag,
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__tags ul li span.tag-permanent,
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__tags ul li span.tag-permanent-medium,
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__tags ul li span.tag-medium,
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__tags ul li span.mxd-scramble {
+  color: #0f0f0f !important;
+}
+/* Hamburger lines default to white via --nl-white. Force black in light
+   mode so the trigger is visible on the cream page. Target both the
+   element directly and via its anchor parent for max specificity. */
+html[color-scheme="light"] a.mxd-menu__hamburger .hamburger__line,
+html[color-scheme="light"] .mxd-menu__toggle .hamburger__line,
+html[color-scheme="light"] .hamburger__line {
+  background-color: #0f0f0f !important;
+}
+
+/* Technityze sets mix-blend-mode: difference on .mxd-hero-06__top so the
+   tags read white on dark video. In light mode this inverts our black
+   text to off-grey - kill the blend mode so the text renders straight.
+   Same trick applies to .mxd-menu__contain (the hamburger trigger).
+   We also kill it in dark mode because we now embed a theme switcher
+   button there which difference-blends to washed-grey. */
+html[color-scheme="light"] .technityze-hero .mxd-hero-06__top,
+.mxd-menu__contain {
+  mix-blend-mode: normal !important;
+}
+
+/* Sticky theme switcher beside the hamburger. */
+.mxd-menu__contain {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.technityze-sticky-theme {
+  display: inline-flex;
+  align-items: center;
+}
+.technityze-sticky-theme .mxd-color-switcher {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+/* Dark mode hamburger lines must be white (blend mode is killed above). */
+html[color-scheme="dark"] a.mxd-menu__hamburger .hamburger__line,
+html[color-scheme="dark"] .mxd-menu__toggle .hamburger__line,
+html[color-scheme="dark"] .hamburger__line {
+  background-color: #ffffff !important;
+}
+
+/* Theme switcher (Day/Night) text + icon on the hero match the page
+   theme: black on light page, white on dark page. */
+html[color-scheme="light"] .technityze-sticky-theme .mxd-color-switcher,
+html[color-scheme="light"] .technityze-sticky-theme .mxd-color-switcher .switcher-text,
+html[color-scheme="light"] .technityze-sticky-theme .mxd-color-switcher svg {
+  color: #0f0f0f !important;
+  fill: #0f0f0f !important;
+}
+html[color-scheme="dark"] .technityze-sticky-theme .mxd-color-switcher,
+html[color-scheme="dark"] .technityze-sticky-theme .mxd-color-switcher .switcher-text,
+html[color-scheme="dark"] .technityze-sticky-theme .mxd-color-switcher svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+/* When the menu overlay is open, .mxd-menu__hamburger gets the .active
+   class. Technityze's overlay uses --base-opp as its background which is
+   the OPPOSITE tone of the page (light page -> dark menu, dark page ->
+   light menu). So the trigger color must invert too when open. */
+.mxd-menu__contain:has(.mxd-menu__hamburger.active) .technityze-sticky-theme .mxd-color-switcher,
+.mxd-menu__contain:has(.mxd-menu__hamburger.active) .technityze-sticky-theme .switcher-text,
+.mxd-menu__contain:has(.mxd-menu__hamburger.active) .technityze-sticky-theme svg {
+  /* default fallback for browsers without :has() - re-applied per-scheme below */
+  color: inherit !important;
+  fill: currentColor !important;
+}
+html[color-scheme="light"] .mxd-menu__contain:has(.mxd-menu__hamburger.active) .hamburger__line {
+  background-color: #ffffff !important;
+}
+html[color-scheme="light"] .mxd-menu__contain:has(.mxd-menu__hamburger.active) .technityze-sticky-theme .mxd-color-switcher,
+html[color-scheme="light"] .mxd-menu__contain:has(.mxd-menu__hamburger.active) .technityze-sticky-theme .switcher-text,
+html[color-scheme="light"] .mxd-menu__contain:has(.mxd-menu__hamburger.active) .technityze-sticky-theme svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+html[color-scheme="dark"] .mxd-menu__contain:has(.mxd-menu__hamburger.active) .hamburger__line {
+  background-color: #0f0f0f !important;
+}
+html[color-scheme="dark"] .mxd-menu__contain:has(.mxd-menu__hamburger.active) .technityze-sticky-theme .mxd-color-switcher,
+html[color-scheme="dark"] .mxd-menu__contain:has(.mxd-menu__hamburger.active) .technityze-sticky-theme .switcher-text,
+html[color-scheme="dark"] .mxd-menu__contain:has(.mxd-menu__hamburger.active) .technityze-sticky-theme svg {
+  color: #0f0f0f !important;
+  fill: #0f0f0f !important;
+}
+
+/* Dark mode page -> overlay should be light/cream so it inverts the
+   page tone. Force background explicitly so we don't depend on Technityze's
+   --base-opp resolution edge cases. */
+html[color-scheme="dark"] .mxd-menu__overlay {
+  background-color: #eeeae8 !important;
+}
+/* Force every text element inside the dark-mode menu to read black on
+   that cream panel. Current-page purple still wins via the override
+   below. */
+html[color-scheme="dark"] .mxd-menu .main-menu__caption,
+html[color-scheme="dark"] .mxd-menu .main-menu__number,
+html[color-scheme="dark"] .mxd-menu .menu-logo__text span,
+html[color-scheme="dark"] .mxd-menu .technityze-menu-logo__sub,
+html[color-scheme="dark"] .mxd-menu .menu-contact .tag,
+html[color-scheme="dark"] .mxd-menu .menu-contact a,
+html[color-scheme="dark"] .mxd-menu .menu-contact span,
+html[color-scheme="dark"] .mxd-menu .menu-data__text,
+html[color-scheme="dark"] .mxd-menu .menu-data__text *,
+html[color-scheme="dark"] .mxd-menu .submenu li a {
+  color: #0f0f0f !important;
+}
+html[color-scheme="dark"] .mxd-menu .main-menu__arrow svg {
+  fill: #0f0f0f !important;
+}
+html[color-scheme="dark"] .mxd-menu .main-menu__divider {
+  background-color: rgba(15, 15, 15, 0.18) !important;
+}
+/* Logo silhouette in the open dark-mode menu (cream panel) is black. */
+html[color-scheme="dark"] .mxd-menu .technityze-logo-mask {
+  background-color: #0f0f0f !important;
+}
+/* Current-page (purple) still wins over the black sweep above. */
+html[color-scheme="dark"] .mxd-menu .main-menu__item--current .main-menu__caption,
+html[color-scheme="dark"] .mxd-menu .main-menu__item--current .main-menu__number {
+  color: var(--accent) !important;
+}
+html[color-scheme="dark"] .mxd-menu .main-menu__item--current .main-menu__arrow svg {
+  fill: var(--accent) !important;
+}
+.technityze-hero .mxd-hero-06__top,
+.technityze-hero .technityze-hero-bottom {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hero bottom: full-width brand name pinned to viewport floor,
+   font-size locked to ~480px (clamped so it still works on mobile). */
+.technityze-hero-bottom {
+  display: block !important;
+  width: 100%;
+  padding-bottom: 0 !important;
+  position: relative;
+  z-index: 2;
+  mix-blend-mode: normal;
+}
+.technityze-hero-bottom .fullwidth-text {
+  margin-bottom: -0.08em;
+}
+.technityze-hero-bottom .fullwidth-text__wrap {
+  padding-top: 0;
+}
+.technityze-hero-bottom .fullwidth-text__content {
+  color: #ffffff;
+  font-size: clamp(3rem, 18vw, 290px);
+  line-height: 0.85;
+  white-space: nowrap;
+  justify-content: center;
+  letter-spacing: -0.04em;
+}
+
+/* Hero headline + CTA - upper-right corner, right edge aligned with the
+   header controls (Say Hello + theme + hamburger) so it reads as one
+   vertical column with the nav. */
+.technityze-hero-headline {
+  position: absolute;
+  z-index: 2;
+  top: 22%;
+  right: 5.5rem;
+  max-width: 540px;
+  text-align: right;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1.75rem;
+}
+.technityze-hero-headline h2 {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(1.1rem, 2vw, 2rem);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0;
+  color: #ffffff;
+  margin: 0;
+  text-transform: uppercase;
+}
+.technityze-hero-headline h2 span {
+  color: var(--accent);
+  text-transform: uppercase;
+}
+@media (min-width: 1600px) {
+  .technityze-hero-headline {
+    right: 10rem;
+  }
+}
+@media (max-width: 767px) {
+  .technityze-hero-headline {
+    position: relative;
+    top: auto;
+    right: auto;
+    transform: none;
+    max-width: 100%;
+    text-align: center;
+    align-items: center;
+    padding: 0 1.5rem 2rem;
+    margin: 0;
+  }
+  /* Double the "We build premium..." headline font on mobile - default
+     clamp(1.1rem, 2vw, 2rem) renders as 11px on a 390px viewport, which
+     is unreadable. 2.2rem fits in the centered column above the CTA. */
+  .technityze-hero-headline h2 {
+    font-size: 2.2rem;
+    line-height: 1.25;
+  }
+}
+
+/* Hero CTA row - holds the Technityze slide-right btn so it sits right-
+   aligned under the headline. */
+.technityze-hero-cta {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+@media (max-width: 767px) {
+  .technityze-hero-cta {
+    justify-content: center;
+  }
+}
+
+/* Mobile hero rework: move the WordPress/Webflow/... tags column ABOVE
+   the "We build premium" copy (Technityze default centers them mid-screen
+   over the video). Also pin the bottom TECHNITYZE wordmark inside the
+   viewport so it doesn't bleed off the edges on phones. */
+@media (max-width: 767px) {
+  /* Pin the two tag columns to the LEFT and RIGHT edges of the hero
+     viewport, anchored vertically a third of the way down the screen
+     (above the headline/CTA block). Each column reads as a clean
+     vertical list aligned to its respective edge. */
+  .technityze-hero .mxd-hero-06__top {
+    position: absolute;
+    top: 37%;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    transform: none;
+    margin: 0;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+  }
+  .technityze-hero .mxd-hero-06__tags {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0;
+    margin: 0;
+    width: 100%;
+  }
+  .technityze-hero .mxd-hero-06__tags .tags-column {
+    flex: 0 0 auto;
+    pointer-events: auto;
+  }
+  .technityze-hero .mxd-hero-06__tags .tags-column:first-of-type ul {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .technityze-hero .mxd-hero-06__tags .tags-column:last-of-type ul {
+    align-items: flex-end;
+    text-align: right;
+  }
+  .technityze-hero .mxd-hero-06__tags ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  /* The Technityze layout puts hero__wrap as a flex column; on mobile we
+     want the top tags to render between media and headline. */
+  .technityze-hero .mxd-hero-06__wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  /* Fullwidth TECHNITYZE wordmark: 18vw was producing ~70px which still
+     overflows on 390px viewports. Drop it on phones so the full word
+     fits edge-to-edge with breathing room. */
+  .technityze-hero-bottom .fullwidth-text__content {
+    font-size: clamp(2.4rem, 14vw, 6rem);
+    letter-spacing: -0.05em;
+  }
+}
+
+/* What we do - section is one large solid card that slides up over the
+   hero on scroll (parallax illusion). Inside, 3 wide cards each with a
+   pixel-art icon, monospace eyebrow, big title, descriptor and tags. */
+.technityze-what-we-do {
+  background: linear-gradient(
+    to bottom,
+    var(--base) 0%,
+    var(--base) 75%,
+    #000000 100%
+  ) !important;
+  padding-top: 4rem !important;
+  padding-bottom: 0 !important;
+  position: relative;
+}
+
+/* Pong statement section - pixel text getting destroyed by a ball
+   ricocheting around four paddles. Pinned to viewport via PinnedSection
+   so MeetTheOps slides over it as user scrolls. */
+.technityze-pong-pinned {
+  position: relative;
+  z-index: 1;
+}
+.technityze-pong {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background-color: #000000;
+  overflow: hidden;
+  z-index: 1;
+}
+html[color-scheme="light"] .technityze-pong {
+  background-color: #FFFFFF;
+}
+/* keep trigger compact - duration is driven by scrollTrigger end */
+
+/* ============================================================
+   Meet The Ops - heading left, animated terminal right with the
+   octopus mascot watching from the chrome bar. Heading typography
+   mirrors the What We Do section for consistency.
+   ============================================================ */
+.technityze-mto {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--base);
+  overflow: hidden;
+  color: var(--t-bright);
+  display: flex;
+  align-items: center;
+  /* Sits above Pong so it visibly rides over the pinned section as
+     the GSAP slide animates y from 100vh -> 0. */
+  z-index: 5;
+}
+.technityze-pong {
+  z-index: 1;
+}
+.technityze-mto__inner {
+  position: relative;
+  width: 100%;
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 5rem 8.5rem;
+  display: grid;
+  grid-template-columns: 0.85fr 1.6fr;
+  align-items: center;
+  gap: 4.5rem;
+}
+@media (max-width: 991px) {
+  .technityze-mto__inner {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    padding: 3.5rem 2rem;
+  }
+}
+/* Mobile: shrink "Hand-built, hand-operated." title so the monospace
+   uppercase string doesn't bleed off the right edge on phones. The
+   monospace caps render ~0.62em wide each so 22 chars * 0.62 = 13.6em
+   which has to fit in viewport minus padding (~360px). 6vw caps the
+   title at ~23px on a 390px screen, leaving headroom. */
+@media (max-width: 767px) {
+  .technityze-mto__title {
+    font-size: clamp(1.7rem, 6vw, 2.4rem);
+    line-height: 1.1;
+  }
+  .technityze-mto__body {
+    font-size: 1.5rem;
+    line-height: 1.5;
+    max-width: 100%;
+  }
+}
+.technityze-mto__eyebrow {
+  margin: 0 0 1.5rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(1.4rem, 3.5vw, 3.15rem);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--t-muted);
+  line-height: 1;
+}
+.technityze-mto__title {
+  margin: 0;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  line-height: 1.05;
+  color: var(--t-bright);
+}
+.technityze-mto__body {
+  margin: 1.75rem 0 0;
+  color: var(--t-bright);
+  font-size: clamp(1.2rem, 1.8vw, 1.8rem);
+  line-height: 1.4;
+  max-width: 48ch;
+}
+.technityze-mto__meta {
+  list-style: none;
+  margin: 2.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  border-top: 1px solid var(--stroke-base);
+  padding-top: 2rem;
+}
+.technityze-mto__meta li {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+.technityze-mto__meta-num {
+  color: var(--t-muted);
+  font-size: clamp(1.2rem, 1.8vw, 1.8rem);
+  letter-spacing: 0.06em;
+  min-width: 2.25rem;
+}
+.technityze-mto__meta-label {
+  color: var(--t-bright);
+  font-size: clamp(1.2rem, 1.8vw, 1.8rem);
+}
+
+/* --- Terminal window --- */
+.technityze-mto__terminal {
+  position: relative;
+  width: 100%;
+  background-color: #0d0d12;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  overflow: hidden;
+  -moz-box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+.technityze-mto__terminal-chrome {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1.1rem 1.5rem;
+  background-color: #15151c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.technityze-mto__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.technityze-mto__dot--red {
+  background-color: #ff5f56;
+}
+.technityze-mto__dot--yellow {
+  background-color: #ffbd2e;
+}
+.technityze-mto__dot--green {
+  background-color: #27c93f;
+}
+.technityze-mto__chrome-title {
+  flex: 1;
+  text-align: center;
+  font-size: clamp(1.2rem, 1.8vw, 1.8rem);
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.02em;
+}
+
+/* Octopus mascot - lives in the chrome bar but positioned absolutely
+   so it can drop below and sit slightly left. Outline-only treatment:
+   transparent body with a stroked border around each pixel. */
+.technityze-mto__octopus {
+  position: absolute;
+  top: 100%;
+  right: 2rem;
+  -moz-transform: translateY(2.5rem);
+  transform: translateY(2.5rem);
+  width: 140px;
+  height: 140px;
+  color: rgba(255, 255, 255, 0.95);
+  z-index: 3;
+  pointer-events: none;
+}
+.technityze-mto__octopus svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+.technityze-mto__octopus rect {
+  transition: transform 0.06s linear;
+}
+.technityze-mto__octopus .technityze-mto__octopus-body rect {
+  fill: currentColor;
+}
+
+.technityze-mto__terminal-body {
+  padding: 2.25rem 2.25rem 2.5rem;
+  min-height: 48rem;
+  font-size: clamp(1.2rem, 1.8vw, 1.8rem);
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.9);
+}
+.technityze-mto__prompt-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  margin-bottom: 0.65rem;
+}
+.technityze-mto__prompt {
+  color: #94a3b8;
+  user-select: none;
+}
+.technityze-mto__cmd {
+  color: #f8fafc;
+}
+.technityze-mto__caret {
+  display: inline-block;
+  width: 0.7rem;
+  height: 1.5rem;
+  background-color: #f8fafc;
+  margin-left: 3px;
+  -webkit-animation: technityze-mto-blink 1s steps(1) infinite;
+  animation: technityze-mto-blink 1s steps(1) infinite;
+}
+@-webkit-keyframes technityze-mto-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+@keyframes technityze-mto-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.technityze-mto__line {
+  white-space: pre;
+  font-size: clamp(1.15rem, 1.7vw, 1.7rem);
+  line-height: 1.5;
+}
+
+.technityze-mto__tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  padding: 1rem 0 2rem;
+  background-color: #0d0d12;
+}
+.technityze-mto__tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: inherit;
+  font-size: clamp(1.15rem, 1.7vw, 1.7rem);
+  padding: 0.75rem 1.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.technityze-mto__tab:hover {
+  color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.technityze-mto__tab--active {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: #0d0d12;
+  font-weight: 600;
+}
+
+html[color-scheme="light"] .technityze-mto {
+  background-color: var(--base);
+}
+html[color-scheme="light"] .technityze-mto__terminal {
+  /* Keep terminal dark regardless of theme - it's a code window. */
+  background-color: #0d0d12;
+}
+.technityze-pong__wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.technityze-pong__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.technityze-what-we-do__card-wrap {
+  position: relative;
+  background-color: var(--base);
+  -moz-border-radius: 2rem;
+  border-radius: 2rem;
+  -moz-box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6),
+    0 12px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6),
+    0 12px 40px rgba(0, 0, 0, 0.4);
+  padding: 5rem 2.5rem 8rem;
+  z-index: 2;
+}
+@media (max-width: 767px) {
+  .technityze-what-we-do__card-wrap {
+    padding: 3.5rem 2rem 5rem;
+  }
+}
+.technityze-what-we-do__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-bottom: 3rem;
+}
+.technityze-what-we-do__eyebrow {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(1.4rem, 3.5vw, 3.15rem);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--t-muted);
+  line-height: 1;
+}
+.technityze-what-we-do__headline {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  line-height: 1.05;
+  margin: 0;
+  color: var(--t-bright);
+}
+
+/* 3D tilt + glow service cards (framer-motion driven). 3-column grid
+   that collapses to single column under 991px. Cards fill column,
+   image floats in bottom-right but stays inside card bounds. */
+.technityze-what-we-do__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  perspective: 1400px;
+}
+@media (max-width: 991px) {
+  .technityze-what-we-do__cards {
+    grid-template-columns: 1fr;
+    place-items: center;
+  }
+}
+.technityze-phc {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  aspect-ratio: 1 / 1.05;
+  border-radius: 1.5rem;
+  background-color: var(--base-tint);
+  -moz-box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  -moz-transition: box-shadow 0.4s ease;
+  transition: box-shadow 0.4s ease;
+}
+.technityze-phc:hover {
+  -moz-box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.technityze-phc__inner {
+  position: absolute;
+  inset: 0.75rem;
+  border-radius: 1.25rem;
+  background-color: rgba(255, 255, 255, 0.025);
+  -moz-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.technityze-phc__grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      to right,
+      rgba(128, 128, 128, 0.07) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(128, 128, 128, 0.07) 1px,
+      transparent 1px
+    );
+  background-size: 32px 32px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 50% 50% at 50% 50%,
+    #000 70%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 50% 50% at 50% 50%,
+    #000 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+.technityze-phc__pixel-trail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+.technityze-phc__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 2rem 2.25rem;
+}
+.technityze-phc__category {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--t-bright);
+}
+.technityze-phc__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.technityze-phc__category-label {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(1rem, 1.4vw, 1.4rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--t-medium);
+}
+.technityze-phc__icon-svg {
+  width: clamp(1.4rem, 1.8vw, 1.75rem);
+  height: clamp(1.4rem, 1.8vw, 1.75rem);
+}
+.technityze-phc__text {
+  color: var(--t-bright);
+  width: 100%;
+}
+.technityze-phc__title {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(2rem, 4.5vw, 4.5rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 0;
+  text-transform: none;
+  color: var(--t-bright);
+  text-align: center;
+}
+.technityze-phc__desc {
+  margin-top: 1.1rem;
+  font-size: clamp(1.2rem, 1.8vw, 1.8rem) !important;
+  line-height: 1.4;
+  color: var(--t-bright) !important;
+  text-align: left;
+  min-height: calc(1.4em * 3);
+}
+.technityze-phc__image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -moz-transform: translate(-50%, calc(-50% - 3rem));
+  transform: translate(-50%, calc(-50% - 3rem));
+  width: 18rem;
+  height: 18rem;
+  z-index: 1;
+  pointer-events: none;
+}
+.technityze-phc__image-light,
+.technityze-phc__image-dark {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+/* default (dark mode) - show the white-pixel image */
+.technityze-phc__image-dark {
+  display: none;
+}
+/* light mode - swap to the black-pixel image */
+html[color-scheme="light"] .technityze-phc__image-light {
+  display: none;
+}
+html[color-scheme="light"] .technityze-phc__image-dark {
+  display: block;
+}
+
+/* Hide Technityze placeholder images inside Services (OurCapabilities) list.
+   Three-column row collapses to two columns visually. */
+.technityze-services .mxd-cpb-list__image {
+  display: none !important;
+}
+
+/* Why-matters manifesto: darker accent purple + always-light text.
+   Includes a decorative oversize "02" in the top corner, an eyebrow,
+   and a 3-principle row below the manifest. */
+.technityze-why-matters {
+  --accent: #4C1099 !important; /* purple-700 (darker) */
+  background-color: #4C1099 !important;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding-top: 14rem !important;
+  padding-bottom: 0 !important;
+  z-index: 1;
+}
+.technityze-why-matters .mxd-container {
+  width: 100%;
+}
+/* Subtle grain / noise tint - layered radial gradients give the flat
+   purple some depth without an image asset. */
+.technityze-why-matters::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.09), transparent 45%),
+    radial-gradient(circle at 85% 88%, rgba(0, 0, 0, 0.35), transparent 55%);
+}
+.technityze-why-matters > * {
+  position: relative;
+  z-index: 1;
+}
+.technityze-why-matters .manifest-accent,
+.technityze-why-matters .manifest-accent * {
+  color: #ffffff !important;
+}
+.technityze-why-matters .manifest-accent > span,
+.technityze-why-matters .manifest-accent > span * {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+/* Oversize section number in top-right corner. */
+.technityze-why-matters__number {
+  position: absolute;
+  top: -1rem;
+  right: 1.5rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(8rem, 22vw, 22rem);
+  font-weight: 600;
+  line-height: 0.85;
+  color: rgba(255, 255, 255, 0.07);
+  z-index: 0;
+  pointer-events: none;
+  letter-spacing: -0.04em;
+}
+
+/* Temporary label between mockup variants - remove once a variant is
+   chosen. */
+.technityze-mockup-label {
+  background-color: #1a1a1a;
+  color: #f8fafc;
+  padding: 1.5rem 3rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-top: 2px solid #6B1FD6;
+  border-bottom: 2px solid #6B1FD6;
+}
+
+/* Pixel TECHNITYZE wordmark, bottom-center. Each SVG unit renders as
+   exactly 16px (same as the grid + octopus), so the letters snap to
+   grid cells. Width = 60 SVG units (TECHNITYZE letter width) * 16px. */
+.technityze-why-matters__wordmark {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  -moz-transform: translate(-50%, 0);
+  transform: translate(-50%, 0);
+  /* 60 svg units wide × 32px = 1920px. Each letter pixel = 2 grid cells
+     (16px), so letter edges align to the grid lines. Clamped to viewport
+     with a small safety margin (96px = 6 grid cells). */
+  width: min(1920px, calc(100vw - 96px));
+  z-index: 0;
+  pointer-events: none;
+}
+.technityze-why-matters__wordmark svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* === VARIANT 1: Octopus watermark in bottom-right.
+   Sized to a multiple of the 16px grid so each octopus pixel aligns
+   exactly with one grid cell - the octopus reads as "filled cells in
+   the grid". */
+.technityze-why-matters__octopus {
+  position: absolute;
+  top: 64px;
+  right: 48px;
+  width: 256px;
+  height: 256px;
+  z-index: 0;
+  pointer-events: none;
+}
+.technityze-why-matters__octopus svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* === VARIANT 2: Vertical cursive signature on the right === */
+.technityze-why-matters__signature {
+  position: absolute;
+  top: 50%;
+  right: 3.5rem;
+  -moz-transform: translateY(-50%) rotate(-90deg);
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: right center;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  z-index: 1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.technityze-why-matters__signature span {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.technityze-why-matters__signature em {
+  font-family: "Caveat", "Brush Script MT", "Snell Roundhand", cursive;
+  font-style: italic;
+  font-size: 2.5rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+/* === VARIANT 3: Giant quote marks in opposite corners === */
+.technityze-why-matters__quote-mark {
+  position: absolute;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(8rem, 14.4vw, 17rem);
+  line-height: 0.7;
+  color: rgba(255, 255, 255, 0.14);
+  z-index: 0;
+  pointer-events: none;
+  font-weight: 400;
+}
+.technityze-why-matters__quote-mark--open {
+  top: 50%;
+  left: 1.5rem;
+  -moz-transform: translateY(calc(-50% - 2rem));
+  transform: translateY(calc(-50% - 2rem));
+}
+.technityze-why-matters__quote-mark--close {
+  top: 50%;
+  right: 1.5rem;
+  -moz-transform: translateY(calc(-50% + 14rem));
+  transform: translateY(calc(-50% + 14rem));
+}
+
+/* === VARIANT 4: Meta info list below the manifesto === */
+.technityze-why-matters__meta {
+  list-style: none;
+  margin: 3.5rem 0 0;
+  padding: 1.5rem 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2.5rem;
+}
+.technityze-why-matters__meta li {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(0.85rem, 1vw, 1rem);
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.02em;
+}
+.technityze-why-matters__meta li span {
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: 0.5rem;
+  font-size: 0.85em;
+}
+
+/* === VARIANT 5: Code block decoration in bottom-right === */
+.technityze-why-matters__codeblock {
+  position: absolute;
+  bottom: 2.5rem;
+  right: 3rem;
+  margin: 0;
+  padding: 1.5rem 1.75rem;
+  background-color: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 28rem;
+  z-index: 0;
+  pointer-events: none;
+  white-space: pre;
+  overflow: hidden;
+}
+@media (max-width: 991px) {
+  .technityze-why-matters__codeblock {
+    display: none;
+  }
+}
+
+/* === VARIANT 6: Retro scanline overlay === */
+.technityze-why-matters__scanlines {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.18) 0px,
+    rgba(0, 0, 0, 0.18) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: overlay;
+}
+
+/* === VARIANT 7: Subtle pixel grid background sized to match the
+   octopus watermark pixels (16px). Anchored to bottom-right so the
+   grid lines align perfectly with the octopus pixel edges. */
+.technityze-why-matters__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-position: right 48px top 64px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 70% 70% at 50% 50%,
+    #000 50%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 70% 70% at 50% 50%,
+    #000 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* === VARIANT 8: Section marker (tag + symbol) in top-left === */
+.technityze-why-matters__marker {
+  position: absolute;
+  top: 2.5rem;
+  left: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  z-index: 1;
+  pointer-events: none;
+}
+.technityze-why-matters__marker-tag {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.05em;
+}
+.technityze-why-matters__marker-symbol {
+  font-size: clamp(2rem, 3.5vw, 3.5rem);
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Eyebrow above the manifesto. */
+/* Full-section link wrapper so the "Let's talk" cursor activates
+   anywhere across the manifesto */
+.technityze-why-matters__wrap {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.technityze-why-matters__wrap:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+.technityze-why-matters__eyebrow {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.technityze-why-matters__eyebrow span {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(1rem, 2.5vw, 2.25rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1;
+}
+.technityze-why-matters__eyebrow::before {
+  content: "";
+  width: 2.5rem;
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.35);
+}
+.technityze-why-matters__eyebrow-diamond {
+  font-size: clamp(1.8rem, 4vw, 3.5rem);
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 1.25rem;
+  position: relative;
+  top: -0.08em;
+}
+
+/* Inline quote marks around the manifesto sentence - sized to the
+   surrounding manifest text but desaturated for a decorative feel */
+/* (inline quote spans removed - using corner watermark version) */
+
+/* 3 principle blocks below the manifest. */
+.technityze-why-matters__principles {
+  margin-top: 4.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+@media (max-width: 991px) {
+  .technityze-why-matters__principles {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+}
+.technityze-why-matters__principle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.technityze-why-matters__principle-num {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.55);
+}
+.technityze-why-matters__principle-title {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(1.3rem, 1.8vw, 1.6rem);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  margin: 0;
+}
+.technityze-why-matters__principle-body {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0;
+}
+
+/* Why-trust ("How we work") - 3-step process timeline. Replaces the
+   stats lines. Visual: numbered steps with monospace big numerals,
+   horizontal flow with connecting dividers on desktop. */
+.technityze-why-trust__steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-top: 3rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+@media (max-width: 991px) {
+  .technityze-why-trust__steps {
+    grid-template-columns: 1fr;
+  }
+}
+.technityze-why-trust__step {
+  padding: 2.5rem 1.75rem 2.5rem 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.technityze-why-trust__step + .technityze-why-trust__step {
+  padding-left: 1.75rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+@media (max-width: 991px) {
+  .technityze-why-trust__step + .technityze-why-trust__step {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}
+.technityze-why-trust__step-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+.technityze-why-trust__step-num {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(2.5rem, 4vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+.technityze-why-trust__step-title {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: var(--t-bright);
+  margin: 0;
+}
+.technityze-why-trust__step-meta {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin: 0;
+}
+.technityze-why-trust__step-body {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--t-medium);
+  margin: 0;
+}
+
+/* Footer fullwidth wordmark - "technityze" is 10 chars (vs Technityze 6),
+   shrink the cqw size so it fits without breaking onto two lines or
+   creating a giant blank space above it. */
+.mxd-footer .fw-mark__content {
+  font-size: 17cqw;
+}
+
+/* Cursor text: default "permanent" variant uses --nl-black which is
+   invisible on dark and purple backgrounds. Force white in our hero,
+   why-matters and CTA where bg is dark or accent purple. */
+.mxd-cursor__text.permanent {
+  color: #ffffff !important;
+}
+
+/* The cursor dot's "active-permanent" variant is white, which disappears
+   on the white-text purple WhyMatters background. Tint dark for contrast. */
+.mxd-cursor__dot.active-permanent {
+  background-color: rgba(15, 15, 15, 0.85) !important;
+}
+
+/* Octopus pixel-art logo - rendered as a CSS masked span (no <img>),
+   so the PNG's black background is fully transparent. Luminance mask
+   mode uses the white pixels as the visible silhouette which we paint
+   with background-color: white in dark mode, black in light mode. */
+.technityze-logo-mask {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  -webkit-mask-image: url("/img/technityze-octopus-logo-pixel.png");
+  mask-image: url("/img/technityze-octopus-logo-pixel.png");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-mode: luminance;
+  mask-mode: luminance;
+  background-color: #ffffff;
+}
+@media (min-width: 768px) {
+  .technityze-logo-mask {
+    width: 58px;
+    height: 58px;
+  }
+}
+/* Light mode page: silhouette black so it reads on the cream page. */
+html[color-scheme="light"] .technityze-logo-mask {
+  background-color: #0f0f0f !important;
+}
+/* Dark mode page: silhouette white. Override-safe so later rules cannot
+   bleach the hero logo grey when the menu is open. */
+html[color-scheme="dark"] .technityze-logo-mask {
+  background-color: #ffffff !important;
+}
+/* Menu logo + text overrides (in-menu only - do not touch hero). */
+/* Dark mode (Day toggle visible) - menu logo + Technityze text white. */
+html[color-scheme="dark"] .mxd-menu .technityze-logo-mask {
+  background-color: #ffffff !important;
+}
+html[color-scheme="dark"] .mxd-menu .menu-logo__text span,
+html[color-scheme="dark"] .mxd-menu .technityze-menu-logo__sub {
+  color: #ffffff !important;
+}
+/* Light mode (Night toggle visible) - menu logo white. */
+html[color-scheme="light"] .mxd-menu .technityze-logo-mask {
+  background-color: #ffffff !important;
+}
+/* Mobile only: dark mode menu logo + "Technityze (built by 2)" text
+   must be BLACK on the cream menu overlay (default white-on-cream
+   blends together). */
+@media (max-width: 767px) {
+  html[color-scheme="dark"] .mxd-menu .technityze-logo-mask {
+    background-color: #0f0f0f !important;
+  }
+  html[color-scheme="dark"] .mxd-menu .menu-logo__text span,
+  html[color-scheme="dark"] .mxd-menu .technityze-menu-logo__sub {
+    color: #0f0f0f !important;
+  }
+}
+
+/* Override default Technityze logo wrapper - text was 2 lines in original
+   (Technityze / Template), we have 1 line (Technityze). Tighten gap and
+   kill the offset padding so the wordmark sits vertical-center of the
+   octopus glyph. */
+.mxd-header .mxd-logo {
+  gap: 0.75rem;
+  align-items: center;
+}
+.mxd-header .mxd-logo__text {
+  padding-top: 0;
+  line-height: 1;
+  align-self: center;
+}
+
+/* Services stack: main.css .line { translateY(100%) } applies vendor-prefixed transforms; GSAP’s
+   y uses unprefixed transform — boxes and painted text desync. Neutralize so only inline GSAP owns y. */
+.mxd-stack-services .services-card__title .line,
+.mxd-stack-services .services-card__descr .line {
+  -webkit-transform: none;
+  -moz-transform: none;
+  -ms-transform: none;
+  transform: none;
+}
+
+/* Preview / landing demo stack — same global .line + SplitText as services stack */
+.mxd-demo-stack .demo-card__title .line,
+.mxd-demo-stack .demo-card__descr .line {
+  -webkit-transform: none;
+  -moz-transform: none;
+  -ms-transform: none;
+  transform: none;
+}
+
+/* Overlay menu: active section (the current page) is highlighted purple,
+   non-active items inherit the default menu text color (black in light
+   mode, white in dark mode). */
+.mxd-menu .main-menu__item.main-menu__item--current .main-menu__number,
+.mxd-menu .main-menu__item.main-menu__item--current .main-menu__caption,
+.mxd-menu .main-menu__item.main-menu__item--current.open .main-menu__caption {
+  color: var(--accent);
+}
+.mxd-menu .main-menu__item.main-menu__item--current .main-menu__toggle svg {
+  fill: var(--accent);
+}
+/* (Removed earlier dark-mode "all white" overrides - the menu overlay
+   in dark mode is cream, so text must be black. Black rules live near
+   the top of this file.) */
+
+/* Menu overlay logo (Technityze + built by 2) - keep the white-on-dark
+   appearance from the hero header, just add the smaller subscript at the
+   same weight and color. */
+.technityze-menu-logo .menu-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.technityze-menu-logo__sub {
+  font-size: 0.7em;
+  font-style: normal;
+  font-weight: inherit;
+  color: inherit;
+  margin-left: 0.4em;
+  letter-spacing: 0;
+}
+
+/* Inner pages have no Hero that owns the global blur overlay, so the blur
+   ends up sticking around at the bottom of the page once a BlurSection
+   re-asserts display:block via its onEnterBack scroll trigger. Just hide
+   the overlay outright on inner routes (it's only meaningful on the
+   home-page Hero parallax flow). */
+body.technityze-inner-page .blur-container {
+  display: none !important;
+}
+
+/* /services service stack: the right column hosts a ServiceVisualCard
+   (home-page style - grid bg + pixel art + pixel trail) instead of a
+   full-bleed screenshot. Strip Technityze's default surface so the visual
+   card's own background shows through. */
+.technityze-service-card__image {
+  background: transparent !important;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+}
+.technityze-service-card__image .services-card__cover {
+  display: none !important;
+}
+.technityze-service-card__image .technityze-svc {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+/* Stack the image, tech-chip strip and hover terminal vertically inside
+   the visual card so the right side of the stack panel isn't mostly
+   negative space. */
+.technityze-service-card__image .technityze-svc .technityze-phc__inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4rem;
+  padding: 4rem 3rem;
+}
+/* Override Technityze's `services-card__image img { width: 100%; height: 100%;
+   object-fit: cover }` so the pixel-art image inside the visual card
+   keeps its sized layout from the ProductHighlightCard variant. */
+.technityze-service-card__image
+  .technityze-svc
+  .technityze-phc__image
+  img {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: contain !important;
+  image-rendering: pixelated;
+}
+/* Override absolute centering from the home-page PHC image; on the
+   services stack we want image to flow inside the inner flex column. */
+.technityze-service-card__image .technityze-svc .technityze-svc__image {
+  position: relative;
+  inset: auto;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: min(34rem, 70%);
+  aspect-ratio: 1 / 1;
+  height: auto;
+  flex: 0 0 auto;
+  z-index: 2;
+}
+.technityze-service-card__image
+  .technityze-svc
+  .technityze-svc__image
+  .technityze-phc__image-light,
+.technityze-service-card__image
+  .technityze-svc
+  .technityze-svc__image
+  .technityze-phc__image-dark {
+  position: absolute;
+}
+
+/* Tech stack pixel chip strip - always visible under the icon */
+.technityze-svc__stack {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+  max-width: 90%;
+  position: relative;
+  z-index: 2;
+}
+.technityze-svc__chip {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--t-medium--light, rgba(13, 13, 18, 0.7));
+  background: rgba(13, 13, 18, 0.05);
+  border: 1px solid rgba(13, 13, 18, 0.12);
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+html[color-scheme="dark"] .technityze-svc__chip {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Hover-revealed terminal command - tied visually to MeetTheOps terminal
+   on the home page. Default hidden, slides up + fades in on card hover. */
+.technityze-svc__terminal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  color: #b18bff;
+  background: rgba(13, 13, 18, 0.9);
+  border: 1px solid rgba(177, 139, 255, 0.25);
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  white-space: nowrap;
+  position: relative;
+  z-index: 2;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.32s ease, transform 0.32s ease;
+}
+.technityze-svc:hover .technityze-svc__terminal {
+  opacity: 1;
+  transform: translateY(0);
+}
+.technityze-svc__terminal-prompt {
+  color: #6b1fd6;
+  font-weight: 700;
+}
+.technityze-svc__terminal-cursor {
+  display: inline-block;
+  width: 0.6rem;
+  height: 1.2rem;
+  background: #b18bff;
+  vertical-align: middle;
+  animation: technityze-svc-blink 0.85s steps(2, start) infinite;
+}
+@keyframes technityze-svc-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+/* /contact: tighter breadcrumbs spacing + raise the hero block. The
+   Technityze default InnerHeadline padding leaves a huge gap above the
+   crumbs which makes the hero feel dropped down the page. */
+.inner-page-content .inner-headline__breadcrumbs {
+  padding-top: 8rem;
+}
+@media (min-width: 1200px) {
+  .inner-page-content .inner-headline__breadcrumbs {
+    padding-top: 10rem;
+  }
+}
+.inner-page-content .inner-headline__content {
+  margin-top: 2rem;
+}
+
+/* /contact: kill the huge ~17rem padding-top Technityze puts on
+   `.inner-headline__content.has-medium-title`. We already raised the
+   breadcrumbs with padding above; this gap on top of the H1 just pushes
+   the hero down the page. */
+.inner-page-content .inner-headline__content.has-medium-title {
+  padding-top: 2rem;
+}
+@media only screen and (min-width: 768px) {
+  .inner-page-content .inner-headline__content.has-medium-title {
+    padding-top: 3rem;
+  }
+}
+@media only screen and (min-width: 1200px) {
+  .inner-page-content .inner-headline__content.has-medium-title {
+    padding-top: 3rem;
+  }
+}
+
+/* Inner pages email wordmark: Technityze default 28cqw is sized for the 16-
+   char "hello@technityze.com". Our string is "contact@technityze.com" (22
+   chars in JetBrains Mono, ~0.6em wide) which overflows hard. Drop to
+   ~7cqw so all 22 chars fit on one line, and center align so it doesn't
+   sit pinned to the left. Same treatment as the footer "technityze"
+   wordmark just in absolute terms. */
+.inner-page-content .headline-email-text .fullwidth-text__content {
+  font-size: 7cqw;
+  justify-content: center;
+  text-align: center;
+}
+.inner-page-content .headline-email-text .fullwidth-text__wrap {
+  display: flex;
+  justify-content: center;
+}
+@media (max-width: 991px) {
+  .inner-page-content .headline-email-text .fullwidth-text__content {
+    font-size: 6.5cqw;
+  }
+}
+
+/* /contact: project type select - match Technityze input look (transparent
+   bg, bottom border, JetBrains Mono caps). Defaults vary across browsers
+   so we reset appearance + add a custom caret. */
+.technityze-contact-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid var(--st-medium, rgba(255, 255, 255, 0.15));
+  padding: 1.4rem 3rem 1.4rem 0;
+  font: inherit;
+  color: var(--t-bright);
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.6rem) 50%,
+    calc(100% - 1.1rem) 50%;
+  background-size:
+    0.5rem 0.5rem,
+    0.5rem 0.5rem;
+  background-repeat: no-repeat;
+}
+.technityze-contact-select:focus {
+  outline: none;
+  border-bottom-color: #6b1fd6;
+}
+.technityze-contact-select option {
+  color: #0d0d12;
+  background: #ffffff;
+}
+
+/* Hidden footer split target placeholder (kept so GSAP collector still
+   finds the expected number of nodes after we removed the visible text). */
+.t-hidden {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Selected work - 4-per-row grid with click-to-open modal. */
+.technityze-work .mxd-projects-grid {
+  --work-card-radius: 1.25rem;
+  --work-card-border: rgba(255, 255, 255, 0.06);
+  --work-card-bg: rgba(255, 255, 255, 0.02);
+}
+html[color-scheme="light"] .technityze-work .mxd-projects-grid {
+  --work-card-border: rgba(13, 13, 18, 0.08);
+  --work-card-bg: rgba(13, 13, 18, 0.02);
+}
+
+/* Title bar: h2 + CTA inline on one row, baseline aligned */
+.technityze-work-titlebar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+/* Mobile: stack the H2 and the "Start a project" CTA vertically instead
+   of side-by-side. The Technityze btn is wide enough that side-by-side
+   layout pushes the title into one tight cell on phones. */
+@media (max-width: 767px) {
+  .technityze-work-titlebar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  .technityze-work-titlebar > * {
+    width: 100%;
+  }
+}
+/* Mobile: add breathing room on the left/right of the Selected work
+   section. Technityze's grid-l-container is full-bleed on phones so the
+   project cards run to the edge. */
+@media (max-width: 767px) {
+  .technityze-work .mxd-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+.technityze-work-h2 {
+  margin: 0;
+}
+.technityze-work .technityze-work-caption {
+  margin: 1.2rem 0 0;
+  font-size: 1.8rem !important;
+  line-height: 1.5;
+  color: var(--t-medium--dark, rgba(255, 255, 255, 0.55));
+}
+html[color-scheme="light"] .technityze-work .technityze-work-caption {
+  color: var(--t-medium--light, rgba(13, 13, 18, 0.55));
+}
+
+/* Override the global .padding-top-title (which is ~18rem at 1600px+) for
+   this section since we want a tighter Selected work stack, and tighten
+   the gap between the title bar and the grid. */
+.technityze-work.padding-top-title {
+  padding-top: 7rem;
+}
+@media (min-width: 1200px) {
+  .technityze-work.padding-top-title {
+    padding-top: 9rem;
+  }
+}
+.technityze-work .mxd-block + .mxd-block {
+  margin-top: 2.5rem;
+}
+
+.technityze-work-card {
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 767px) {
+  .technityze-work-card {
+    padding: 0.6rem 0;
+    margin-bottom: 2.4rem;
+  }
+}
+
+.technityze-work-card__media {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--work-card-radius);
+  border: 1px solid var(--work-card-border);
+  background-color: var(--work-card-bg);
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  padding: 0;
+  cursor: pointer;
+}
+.technityze-work-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  transition: transform 0.6s ease;
+}
+.technityze-work-card__media:hover .technityze-work-card__img {
+  transform: scale(1.04);
+}
+
+.technityze-work-card__caption {
+  padding: 1.4rem 0.4rem 0;
+}
+.technityze-work-card__name {
+  font-size: 2.4rem;
+  line-height: 1.15;
+  display: block;
+  margin-bottom: 0.6rem;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--t-bright--dark, #ffffff);
+  font-family: inherit;
+  font-weight: 600;
+}
+html[color-scheme="light"] .technityze-work-card__name {
+  color: var(--t-bright--light, #121212);
+}
+.technityze-work-card__name:hover {
+  opacity: 0.78;
+}
+.technityze-work-card__outcome {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.3rem;
+  letter-spacing: 0.02em;
+  color: var(--t-medium--dark, rgba(255, 255, 255, 0.55));
+  margin: 0;
+  line-height: 1.5;
+}
+html[color-scheme="light"] .technityze-work-card__outcome {
+  color: var(--t-medium--light, rgba(13, 13, 18, 0.55));
+}
+
+/* Per-project cursor theming. Set html[data-cursor-theme] from React on
+   pointer enter/leave; kill background-color + color transitions so the
+   dot and the text rect both flip color instantly (no laggy fade), while
+   transform + opacity keep their default transitions so the cursor still
+   scales in smoothly on first entry. */
+html[data-cursor-theme] .mxd-cursor__text,
+html[data-cursor-theme] .mxd-cursor__text.accent,
+html[data-cursor-theme] .mxd-cursor__dot,
+html[data-cursor-theme] .mxd-cursor__dot.active-accent {
+  transition-property: transform, opacity !important;
+}
+html[data-cursor-theme="bordo"] .mxd-cursor__text.accent {
+  background-color: #7a1d2a !important;
+  color: #ffffff !important;
+}
+html[data-cursor-theme="bordo"] .mxd-cursor__dot.active-accent {
+  background-color: #7a1d2a !important;
+}
+
+html[data-cursor-theme="white"] .mxd-cursor__text.accent {
+  background-color: #ffffff !important;
+  color: #6B1FD6 !important;
+}
+html[data-cursor-theme="white"] .mxd-cursor__dot.active-accent {
+  background-color: #ffffff !important;
+}
+
+html[data-cursor-theme="purple"] .mxd-cursor__text.accent {
+  background-color: #6B1FD6 !important;
+  color: #ffffff !important;
+}
+html[data-cursor-theme="purple"] .mxd-cursor__dot.active-accent {
+  background-color: #6B1FD6 !important;
+}
+
+html[data-cursor-theme="black-green"] .mxd-cursor__text.accent {
+  background-color: #0a0a0a !important;
+  color: #34d399 !important;
+}
+html[data-cursor-theme="black-green"] .mxd-cursor__dot.active-accent {
+  background-color: #0a0a0a !important;
+}
+
+/* Project detail modal */
+.technityze-work-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  animation: technityze-modal-in 0.32s ease both;
+}
+@keyframes technityze-modal-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.technityze-work-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 8, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.technityze-work-modal__panel {
+  position: relative;
+  width: 100%;
+  max-width: 1520px;
+  max-height: calc(100vh - 4rem);
+  min-height: min(760px, calc(100vh - 4rem));
+  background: #0c0c10;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: technityze-modal-panel-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+html[color-scheme="light"] .technityze-work-modal__panel {
+  background: #ffffff;
+  border-color: rgba(13, 13, 18, 0.1);
+}
+@keyframes technityze-modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Top-right actions row: View live site circle + close X */
+.technityze-work-modal__actions {
+  position: absolute;
+  top: 1.8rem;
+  right: 1.8rem;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.technityze-work-modal__close,
+.technityze-work-modal__visit {
+  position: relative;
+  width: 4.6rem;
+  height: 4.6rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(20, 20, 26, 0.72);
+  color: #ffffff;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
+}
+html[color-scheme="light"] .technityze-work-modal__close,
+html[color-scheme="light"] .technityze-work-modal__visit {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(13, 13, 18, 0.14);
+  color: #0d0d12;
+}
+.technityze-work-modal__close:hover,
+.technityze-work-modal__visit:hover {
+  transform: scale(1.08);
+}
+.technityze-work-modal__visit {
+  background: #6B1FD6;
+  border-color: #6B1FD6;
+  color: #ffffff;
+}
+html[color-scheme="light"] .technityze-work-modal__visit {
+  background: #6B1FD6;
+  border-color: #6B1FD6;
+  color: #ffffff;
+}
+.technityze-work-modal__visit:hover {
+  background: #5618b3;
+  border-color: #5618b3;
+}
+.technityze-work-modal__visit.is-disabled {
+  background: rgba(20, 20, 26, 0.72);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.55);
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+html[color-scheme="light"] .technityze-work-modal__visit.is-disabled {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(13, 13, 18, 0.14);
+  color: rgba(13, 13, 18, 0.45);
+}
+.technityze-work-modal__visit.is-disabled:hover {
+  transform: none;
+}
+
+/* Hover bubble next to circle CTA */
+.technityze-work-modal__visit-bubble {
+  position: absolute;
+  right: calc(100% + 1rem);
+  top: 50%;
+  transform: translateY(-50%) translateX(8px);
+  padding: 0.8rem 1.4rem;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: #0d0d12;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+html[color-scheme="light"] .technityze-work-modal__visit-bubble {
+  background: #0d0d12;
+  color: #ffffff;
+  border-color: rgba(13, 13, 18, 0.16);
+}
+.technityze-work-modal__visit:hover .technityze-work-modal__visit-bubble {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Two-column split: image left (contained, never cropped), text right.
+   Right panel fixed-width so image takes the rest of the wider modal. */
+.technityze-work-modal__grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38rem;
+  gap: 0;
+  overflow: hidden;
+}
+.technityze-work-modal__media {
+  position: relative;
+  background: #050507;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2rem 1rem 2rem 2rem;
+  overflow: hidden;
+}
+.technityze-work-modal__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+  border-radius: 0.8rem;
+}
+.technityze-work-modal__body {
+  padding: 4.5rem 4rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+  color: inherit;
+  overflow-y: auto;
+}
+@media (max-width: 899px) {
+  .technityze-work-modal__grid {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+  .technityze-work-modal__media {
+    aspect-ratio: 16 / 10;
+    padding: 1.5rem;
+  }
+  .technityze-work-modal__body {
+    padding: 2.4rem 2rem 2.4rem;
+  }
+}
+.technityze-work-modal__eyebrow {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.2rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0;
+}
+html[color-scheme="light"] .technityze-work-modal__eyebrow {
+  color: rgba(13, 13, 18, 0.55);
+}
+.technityze-work-modal__title {
+  font-size: 3.8rem;
+  line-height: 1.08;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.technityze-work-modal__outcome {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.4rem;
+  color: #b18bff;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+html[color-scheme="light"] .technityze-work-modal__outcome {
+  color: #6B1FD6;
+}
+.technityze-work-modal__desc {
+  font-size: 1.65rem;
+  line-height: 1.6;
+  margin: 0.8rem 0 1.2rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+html[color-scheme="light"] .technityze-work-modal__desc {
+  color: rgba(13, 13, 18, 0.82);
+}
+.technityze-work-modal__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+.technityze-work-modal__tag {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 0.55rem 1.1rem;
+  line-height: 1.2;
+}
+html[color-scheme="light"] .technityze-work-modal__tag {
+  color: rgba(13, 13, 18, 0.85);
+  background: rgba(13, 13, 18, 0.06);
+  border-color: rgba(13, 13, 18, 0.14);
+}
+
+/* /about-us hero: brand tags row above H1 */
+.technityze-about-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 2.4rem;
+}
+.technityze-about-tag {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  line-height: 1.2;
+}
+html[color-scheme="light"] .technityze-about-tag {
+  color: rgba(13, 13, 18, 0.82);
+  background: rgba(13, 13, 18, 0.04);
+  border-color: rgba(13, 13, 18, 0.14);
+}
+
+/* Pixel octopus hero art on right side of /about-us headline. Uses the
+   .technityze-logo-mask base (mask-image + theme-aware fill), only the
+   size needs to scale up. */
+.technityze-about-hero-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.technityze-about-hero-art__octopus.technityze-logo-mask {
+  width: 38rem;
+  height: 38rem;
+  max-width: 100%;
+}
+@media (min-width: 1400px) {
+  .technityze-about-hero-art__octopus.technityze-logo-mask {
+    width: 44rem;
+    height: 44rem;
+  }
+}
+
+/* /404: pixel octopus replaces center "0" digit. Digit spans use
+   font-size: 16rem/28rem/36rem/46rem at the Technityze breakpoints, so we
+   size the mask in rems to match approximate cap height. */
+.technityze-404-number.mxd-error__number {
+  align-items: center;
+  gap: 1.5rem;
+}
+.technityze-404-octopus.technityze-logo-mask {
+  width: 12rem;
+  height: 12rem;
+}
+@media only screen and (min-width: 768px) {
+  .technityze-404-octopus.technityze-logo-mask {
+    width: 20rem;
+    height: 20rem;
+  }
+}
+@media only screen and (min-width: 992px) {
+  .technityze-404-octopus.technityze-logo-mask {
+    width: 26rem;
+    height: 26rem;
+  }
+}
+@media only screen and (min-width: 1600px) {
+  .technityze-404-octopus.technityze-logo-mask {
+    width: 34rem;
+    height: 34rem;
+  }
+}
