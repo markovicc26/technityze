@@ -5,7 +5,7 @@ import {
   createContext,
   isValidElement,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   type ComponentPropsWithoutRef,
@@ -16,11 +16,8 @@ import {
 } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText.js";
 
-gsap.registerPlugin(ScrollTrigger, SplitText);
-
-type SplitTextInstance = InstanceType<typeof SplitText>;
+gsap.registerPlugin(ScrollTrigger);
 
 export type ServicesStackPart =
   | "card"
@@ -71,14 +68,6 @@ function collectCards(cardRefs: MutableRefObject<Array<HTMLElement | null>>) {
   return { cards, indices };
 }
 
-const splitTextVars = {
-  type: "words, lines",
-  mask: "lines",
-  tag: "span",
-  linesClass: "line++",
-  aria: "none",
-} as const;
-
 export default function CommonServicesStack({
   children,
   ...rest
@@ -118,102 +107,75 @@ export default function CommonServicesStack({
     [],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let cancelled = false;
     const cleanups: Array<() => void> = [];
-    const titleSplits: SplitTextInstance[] = [];
-    const descrSplits: SplitTextInstance[] = [];
+    const tweenTargets: HTMLElement[] = [];
 
-    const revertTitleSplits = () => {
-      titleSplits.forEach((s) => s.revert());
-      titleSplits.length = 0;
-    };
-    const revertDescrSplits = () => {
-      descrSplits.forEach((s) => s.revert());
-      descrSplits.length = 0;
-    };
-
-    function animateContentIn(lines: HTMLElement[]) {
-      gsap.to(lines, {
-        y: "0%",
+    function animateTitleIn(titleEl: HTMLElement) {
+      gsap.to(titleEl, {
+        yPercent: 0,
         duration: 0.75,
         ease: "common",
-        stagger: 0.08,
         overwrite: "auto",
       });
     }
 
-    function animateContentInSecond(
-      linesDescr: HTMLElement[],
-      description: Element,
-    ) {
-      gsap.to(linesDescr, {
-        y: "0%",
+    function animateTitleOut(titleEl: HTMLElement) {
+      gsap.to(titleEl, {
+        yPercent: 100,
+        duration: 0.5,
+        ease: "common",
+      });
+    }
+
+    function animateDescrIn(descrEl: HTMLElement, tagsEl: HTMLElement) {
+      gsap.to(descrEl, {
+        y: 0,
+        opacity: 1,
         duration: 0.75,
         ease: "common",
-        stagger: 0.08,
       });
-      gsap.to(description, {
+      gsap.to(tagsEl, {
         opacity: 1,
         duration: 0.75,
         ease: "common",
       });
     }
 
-    function animateContentOut(lines: HTMLElement[]) {
-      gsap.to(lines, {
-        y: "100%",
-        duration: 0.5,
+    function animateDescrOut(descrEl: HTMLElement, tagsEl: HTMLElement) {
+      gsap.to(descrEl, {
+        y: 24,
+        opacity: 0,
+        duration: 0.3,
+        ease: "common",
+      });
+      gsap.to(tagsEl, {
+        opacity: 0,
+        duration: 0.3,
         ease: "common",
       });
     }
 
-    /**
-     * When the stack is in the title reveal band (`start: "top 40%"` on each card) but `onEnter` never
-     * ran (common for `#services` / first paint), lines stay at 100% — this plays `animateContentIn` so
-     * the entrance matches the other cards. When a tween is already running or lines are at rest at 0%,
-     * it only fixes state on refresh (resize) without re-triggering.
-     */
-    function syncTitleLineY(
-      cardList: HTMLElement[],
-      splits: SplitTextInstance[],
-    ) {
+    function syncTitleY(cardList: HTMLElement[], titleEls: HTMLElement[]) {
       if (!cardList.length) return;
       const vh = window.innerHeight;
       const revealY = vh * 0.4;
       cardList.forEach((card, i) => {
-        const lines = splits[i]?.lines;
-        if (!lines?.length) return;
+        const titleEl = titleEls[i];
+        if (!titleEl) return;
         const top = card.getBoundingClientRect().top;
         if (top >= revealY) {
-          gsap.set(lines, { y: "100%" });
+          gsap.set(titleEl, { yPercent: 100 });
           return;
         }
-        if (gsap.isTweening(lines)) return;
-        const yp = Number(
-          gsap.getProperty(lines[0] as HTMLElement, "yPercent") ?? 0,
-        );
+        if (gsap.isTweening(titleEl)) return;
+        const yp = Number(gsap.getProperty(titleEl, "yPercent") ?? 0);
         if (Number.isNaN(yp) || yp > 0.1) {
-          animateContentIn(lines);
+          animateTitleIn(titleEl);
         } else {
-          gsap.set(lines, { y: "0%" });
+          gsap.set(titleEl, { yPercent: 0 });
         }
-      });
-    }
-
-    function animateContentOutSecond(
-      linesDescr: HTMLElement[],
-      description: Element,
-    ) {
-      gsap.to(linesDescr, {
-        y: "100%",
-        duration: 0.5,
-        ease: "common",
-      });
-      gsap.to(description, {
-        opacity: 0,
-        duration: 0.3,
-        ease: "common",
       });
     }
 
@@ -225,49 +187,28 @@ export default function CommonServicesStack({
 
       const lastCard = cards[cards.length - 1];
 
+      const titleEls: HTMLElement[] = [];
+      const descrEls: HTMLElement[] = [];
+
       for (let index = 0; index < cards.length; index++) {
         const slot = indices[index];
         const title = titleRefs.current[slot];
-        if (!title) {
-          revertTitleSplits();
-          return;
-        }
-        titleSplits.push(SplitText.create(title, { ...splitTextVars }));
+        const descr = descrRefs.current[slot];
+        if (!title || !descr) return;
+        titleEls.push(title);
+        descrEls.push(descr);
       }
 
-      for (let index = 0; index < cards.length; index++) {
-        const slot = indices[index];
-        const linesDescrEl = descrRefs.current[slot];
-        if (!linesDescrEl) {
-          revertDescrSplits();
-          revertTitleSplits();
-          return;
-        }
-        descrSplits.push(SplitText.create(linesDescrEl, { ...splitTextVars }));
-      }
-
-      /* main.css .line { translateY(100%) } + mask — ensure GSAP inline values apply cleanly (no leftover -webkit-). */
-      titleSplits.forEach((split) => {
-        const lines = split.lines;
-        if (!lines?.length) return;
-        lines.forEach((line) => {
-          line.style.removeProperty("-webkit-transform");
-          line.style.removeProperty("-moz-transform");
-          line.style.removeProperty("-ms-transform");
-          line.style.removeProperty("transform");
+      titleEls.forEach((titleEl) => {
+        gsap.set(titleEl, {
+          overflow: "hidden",
+          display: "block",
+          willChange: "transform",
         });
-        gsap.set(lines, { y: "100%" });
+        gsap.set(titleEl, { yPercent: 100 });
       });
-      descrSplits.forEach((split) => {
-        const lines = split.lines;
-        if (!lines?.length) return;
-        lines.forEach((line) => {
-          line.style.removeProperty("-webkit-transform");
-          line.style.removeProperty("-moz-transform");
-          line.style.removeProperty("-ms-transform");
-          line.style.removeProperty("transform");
-        });
-        gsap.set(lines, { y: "100%" });
+      descrEls.forEach((descrEl) => {
+        gsap.set(descrEl, { y: 24, opacity: 0 });
       });
 
       cards.forEach((card, index) => {
@@ -323,40 +264,37 @@ export default function CommonServicesStack({
 
       cards.forEach((card, index) => {
         const slot = indices[index];
-        const description = tagsRefs.current[slot];
-        const titleSplit = titleSplits[index];
-        const descrSplit = descrSplits[index];
-        if (!description || !titleSplit || !descrSplit) return;
+        const tagsEl = tagsRefs.current[slot];
+        const titleEl = titleEls[index];
+        const descrEl = descrEls[index];
+        if (!tagsEl || !titleEl || !descrEl) return;
 
-        const lines = titleSplit.lines;
-        const linesDescr = descrSplit.lines;
-        if (!lines.length) return;
+        tweenTargets.push(titleEl, descrEl, tagsEl);
 
         const inTitle = ScrollTrigger.create({
           trigger: card,
           start: "top 40%",
-          onEnter: () => animateContentIn(lines),
+          onEnter: () => animateTitleIn(titleEl),
           onEnterBack: () => {
             if (index === 0) {
-              gsap.set(lines, { y: "0%" });
+              gsap.set(titleEl, { yPercent: 0 });
             } else {
-              animateContentIn(lines);
+              animateTitleIn(titleEl);
             }
           },
           onLeaveBack: () => {
-            // Keep first card title fixed/visible on reload and top-of-page state.
             if (index === 0) {
-              gsap.set(lines, { y: "0%" });
+              gsap.set(titleEl, { yPercent: 0 });
               return;
             }
-            animateContentOut(lines);
+            animateTitleOut(titleEl);
           },
         });
         const inDescr = ScrollTrigger.create({
           trigger: card,
           start: "top top",
-          onEnter: () => animateContentInSecond(linesDescr, description),
-          onLeaveBack: () => animateContentOutSecond(linesDescr, description),
+          onEnter: () => animateDescrIn(descrEl, tagsEl),
+          onLeaveBack: () => animateDescrOut(descrEl, tagsEl),
         });
         cleanups.push(() => {
           inTitle.kill();
@@ -367,8 +305,8 @@ export default function CommonServicesStack({
       const onStRefresh = () => {
         if (cancelled) return;
         const { cards: c } = collectCards(cardRefs);
-        if (c.length && titleSplits.length) {
-          syncTitleLineY(c, titleSplits);
+        if (c.length && titleEls.length) {
+          syncTitleY(c, titleEls);
         }
       };
       ScrollTrigger.addEventListener("refresh", onStRefresh);
@@ -402,8 +340,16 @@ export default function CommonServicesStack({
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
       cleanups.forEach((fn) => fn());
-      revertDescrSplits();
-      revertTitleSplits();
+      gsap.killTweensOf(tweenTargets);
+      titleRefs.current.forEach((t) => {
+        if (t) gsap.set(t, { clearProps: "transform,overflow,willChange" });
+      });
+      descrRefs.current.forEach((d) => {
+        if (d) gsap.set(d, { clearProps: "transform,opacity,willChange" });
+      });
+      tagsRefs.current.forEach((g) => {
+        if (g) gsap.set(g, { clearProps: "opacity,willChange" });
+      });
     };
   }, []);
 

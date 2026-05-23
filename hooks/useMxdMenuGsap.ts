@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import type React from "react";
 
 import { useLenis } from "@/components/common/LenisContext";
@@ -228,7 +228,6 @@ export function useMxdMenuGsap(
   const lenis = useLenis();
   const pathname = usePathname();
   const resetMenuRef = useRef<(() => void) | null>(null);
-  const closeMenuAnimatedRef = useRef<(() => void) | null>(null);
 
   useLayoutEffect(() => {
     registerMenuReset(null);
@@ -249,13 +248,9 @@ export function useMxdMenuGsap(
       }
       if (disposed) return;
 
-      const { dispose, resetMenu, closeMenuAnimated } = bindMxdMenuGsap(
-        collected,
-        lenis,
-      );
+      const { dispose, resetMenu } = bindMxdMenuGsap(collected, lenis);
       disposeFn = dispose;
       resetMenuRef.current = resetMenu;
-      closeMenuAnimatedRef.current = closeMenuAnimated;
       registerMenuReset(resetMenu);
     };
     void bindWhenFontsReady();
@@ -264,18 +259,18 @@ export function useMxdMenuGsap(
       disposed = true;
       disposeFn?.();
       resetMenuRef.current = null;
-      closeMenuAnimatedRef.current = null;
       registerMenuReset(null);
       lenis?.start();
     };
   }, [navNode, toggleNode, hamburgerNode, lenis, registerMenuReset, refs]);
 
   const isFirstPathRef = useRef(true);
-  useEffect(() => {
+  /** Instant reset — never `closeMenuAnimated` here; it overlaps the route commit. */
+  useLayoutEffect(() => {
     if (isFirstPathRef.current) {
       isFirstPathRef.current = false;
       return;
     }
-    closeMenuAnimatedRef.current?.();
+    resetMenuRef.current?.();
   }, [pathname]);
 }

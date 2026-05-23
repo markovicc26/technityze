@@ -8,7 +8,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CustomEase } from "gsap/CustomEase";
 import {
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -144,7 +143,14 @@ export default function TemplateRuntimeProvider({
     };
   }, []);
 
-  useLayoutEffect(() => {
+  /**
+   * Must run in `useEffect`, not `useLayoutEffect`: on `/` → inner route, child
+   * unmount cleanups (ScrollTrigger.kill in useEffect on Home/Pong/etc.) run in the
+   * passive phase *after* layout. Refreshing ScrollTrigger earlier races those
+   * cleanups → React removeChild / NotFoundError. After reload, trees align so it
+   * often “works”.
+   */
+  useEffect(() => {
     if (isFirstPathRef.current) {
       isFirstPathRef.current = false;
       return;
@@ -157,9 +163,11 @@ export default function TemplateRuntimeProvider({
       window.scrollTo(0, 0);
     }
 
-    requestAnimationFrame(() => {
+    const t = window.setTimeout(() => {
       ScrollTrigger.refresh();
-    });
+    }, 0);
+
+    return () => window.clearTimeout(t);
   }, [pathname]);
 
   return (

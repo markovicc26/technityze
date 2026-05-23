@@ -1,4 +1,5 @@
 "use client";
+
 import {
   useLayoutEffect,
   useRef,
@@ -8,13 +9,15 @@ import {
 } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText.js";
 import Link, { type LinkProps } from "next/link";
-import { usePathname } from "next/navigation";
-import SplitType from "split-type";
 
-gsap.registerPlugin(ScrollTrigger, SplitText);
+gsap.registerPlugin(ScrollTrigger);
 
+/**
+ * Text animations without SplitText / SplitType — those mutate React-owned DOM
+ * and cause removeChild crashes during route transitions.
+ * All tweens target the host element only (opacity / transform / filter).
+ */
 export type CommonTextAnimation =
   | "none"
   | "revealType"
@@ -31,6 +34,12 @@ type CommonAnimatedTextProps<T extends ElementType = "p"> = {
   animation?: CommonTextAnimation;
 } & Omit<ComponentPropsWithoutRef<T>, "as" | "className" | "children">;
 
+function killScrollTriggersForElement(el: HTMLElement): void {
+  ScrollTrigger.getAll().forEach((st) => {
+    if (st.trigger === el) st.kill();
+  });
+}
+
 export default function CommonAnimatedText<T extends ElementType = "p">({
   as,
   className,
@@ -40,169 +49,157 @@ export default function CommonAnimatedText<T extends ElementType = "p">({
 }: CommonAnimatedTextProps<T>) {
   const Tag = (as ?? "p") as ElementType;
   const elRef = useRef<HTMLElement | null>(null);
-  const pathname = usePathname();
 
   useLayoutEffect(() => {
     const el = elRef.current;
     if (!el || animation === "none") return;
     let cancelled = false;
-    let cleanup: (() => void) | undefined;
+    const tweens: gsap.core.Tween[] = [];
+    const timelines: gsap.core.Timeline[] = [];
 
-    const init = () => {
-      if (cancelled) return;
-      if (animation === "revealType") {
-        const st = new SplitType(el, {
-          types: "words,chars",
-          wordClass: "reveal-word",
-          charClass: "reveal-char",
-        });
-        const tween = st.chars?.length
-          ? gsap.fromTo(
-              st.chars,
-              {
-                opacity: 0,
-                filter: "blur(10px)",
-                xPercent: 12,
-              },
-              {
-                scrollTrigger: {
-                  trigger: el,
-                  start: "top bottom",
-                  end: "top 60%",
-                  scrub: 1.4,
-                },
-                opacity: 1,
-                filter: "blur(0px)",
-                xPercent: 0,
-                stagger: 0.03,
-                ease: "none",
-              },
-            )
-          : null;
-        cleanup = () => {
-          tween?.kill();
-          st.revert();
-        };
-        return;
-      }
-
-      const split = SplitText.create(el, {
-        type:
-          animation === "animChars" || animation === "animCharsLoad"
-            ? "chars, words"
-            : "words, lines",
-        ...(animation === "animChars" || animation === "animCharsLoad"
-          ? {
-              charsClass: "char",
-              mask: "chars" as const,
-              smartWrap: true,
-            }
-          : {
-              linesClass: "line",
-              autoSplit: true,
-              mask: "lines" as const,
-            }),
-        aria: "none",
-        onSplit: (self: SplitText) => {
-          if (
-            animation === "splitLines" ||
-            animation === "splitLinesReverse" ||
-            animation === "splitLinesLoad"
-          ) {
-            if (animation === "splitLinesLoad") {
-              return gsap.from(self.lines, {
-                yPercent: 100,
-                rotation: 1,
-                duration: 0.6,
-                stagger: { amount: 0.2 },
-              });
-            }
-
-            return gsap
-              .timeline({
-                scrollTrigger: {
-                  trigger: el,
-                  start: "top bottom",
-                  end: "top 90%",
-                  toggleActions: "none play none reset",
-                },
-              })
-              .from(self.lines, {
-                yPercent: animation === "splitLines" ? 100 : -100,
-                rotation: 1,
-                duration: 0.5,
-                stagger: { amount: animation === "splitLines" ? 0.2 : 0.1 },
-              });
-          }
-
-          if (animation === "animCharsLoad") {
-            return gsap.from(self.chars, {
-              yPercent: 100,
-              autoAlpha: 0,
-              duration: 0.6,
-              ease: "custom",
-              stagger: { amount: 0.3 },
-            });
-          }
-
-          return gsap
-            .timeline({
-              scrollTrigger: {
-                trigger: el,
-                start: "top bottom",
-                end: "top 80%",
-                toggleActions: "none play none reset",
-              },
-            })
-            .from(self.chars, {
-              yPercent: 100,
-              autoAlpha: 0,
-              duration: 0.6,
-              ease: "custom",
-              stagger: { amount: 0.3 },
-            });
-        },
+    const cleanup = () => {
+      tweens.forEach((t) => t.kill());
+      timelines.forEach((tl) => tl.kill());
+      killScrollTriggersForElement(el);
+      gsap.killTweensOf(el);
+      gsap.set(el, {
+        clearProps: "transform,opacity,filter,willChange,overflow",
       });
-
-      cleanup = () => {
-        split.revert();
-      };
     };
 
     const boot = () => {
-      // Let route transition/layout settle before measuring trigger positions.
-      requestAnimationFrame(() => {
-        init();
-        ScrollTrigger.refresh();
-      });
+      if (cancelled) return;
+      gsap.set(el, { overflow: "hidden", willChange: "transform,opacity,filter" });
+
+      if (animation === "revealType") {
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: el,
+            start: "top bottom",
+            end: "top 60%",
+            scrub: 1.4,
+          },
+        });
+        tl.fromTo(
+          el,
+          { autoAlpha: 0, y: 28, filter: "blur(10px)" },
+          { autoAlpha: 1, y: 0, filter: "blur(0px)", ease: "none" },
+        );
+        timelines.push(tl);
+        return;
+      }
+
+      if (
+        animation === "splitLines" ||
+        animation === "splitLinesReverse" ||
+        animation === "splitLinesLoad"
+      ) {
+        const fromY =
+          animation === "splitLinesReverse"
+            ? -48
+            : animation === "splitLinesLoad"
+              ? 36
+              : 48;
+        if (animation === "splitLinesLoad") {
+          const tw = gsap.fromTo(
+            el,
+            { autoAlpha: 0, y: fromY, rotateX: 2 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              rotateX: 0,
+              duration: 0.65,
+              ease: "custom",
+            },
+          );
+          tweens.push(tw);
+          return;
+        }
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: el,
+            start: "top bottom",
+            end: "top 90%",
+            toggleActions: "none play none reset",
+          },
+        });
+        tl.fromTo(
+          el,
+          { autoAlpha: 0, y: fromY },
+          { autoAlpha: 1, y: 0, duration: 0.55, ease: "power3.out" },
+        );
+        timelines.push(tl);
+        return;
+      }
+
+      if (animation === "animChars" || animation === "animCharsLoad") {
+        if (animation === "animCharsLoad") {
+          const tw = gsap.fromTo(
+            el,
+            { autoAlpha: 0, y: 32, scale: 0.98 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.65,
+              ease: "custom",
+            },
+          );
+          tweens.push(tw);
+          return;
+        }
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: el,
+            start: "top bottom",
+            end: "top 80%",
+            toggleActions: "none play none reset",
+          },
+        });
+        tl.fromTo(
+          el,
+          { autoAlpha: 0, y: 36 },
+          { autoAlpha: 1, y: 0, duration: 0.6, ease: "custom" },
+        );
+        timelines.push(tl);
+      }
+    };
+
+    let booted = false;
+    const bootOnce = () => {
+      if (cancelled || booted) return;
+      booted = true;
+      boot();
+      ScrollTrigger.refresh();
     };
 
     const delayedRefreshId = window.setTimeout(() => {
-      ScrollTrigger.refresh();
+      if (!cancelled) ScrollTrigger.refresh();
     }, 300);
+
+    const rafId = requestAnimationFrame(() => bootOnce());
 
     if ("fonts" in document) {
       void document.fonts.ready.then(() => {
-        boot();
+        requestAnimationFrame(() => bootOnce());
       });
-    } else {
-      boot();
     }
 
     return () => {
       cancelled = true;
       window.clearTimeout(delayedRefreshId);
-      cleanup?.();
+      cancelAnimationFrame(rafId);
+      cleanup();
     };
-  }, [animation, pathname]);
+  }, [animation]);
 
   return (
     <Tag
       className={className}
       data-common-animated={animation !== "none" ? "1" : undefined}
       {...rest}
-      ref={(el: HTMLElement | null) => {
-        elRef.current = el;
+      ref={(node: HTMLElement | null) => {
+        elRef.current = node;
       }}
     >
       {children}

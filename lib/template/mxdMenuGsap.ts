@@ -1,10 +1,7 @@
 "use client";
 
 import { gsap } from "gsap";
-import { SplitText } from "gsap/SplitText.js";
 import type Lenis from "lenis";
-
-gsap.registerPlugin(SplitText);
 
 export type MxdMenuGsapMenuRow = {
   item: HTMLLIElement;
@@ -31,22 +28,38 @@ export type MxdMenuGsapElements = {
   menuRows: MxdMenuGsapMenuRow[];
 };
 
-function splitAndHide(elements: HTMLElement[]): SplitText[] {
-  if (!elements.length) return [];
-  return elements.map((el) => {
-    const split = SplitText.create(el, {
-      type: "lines",
-      mask: "lines",
-      linesClass: "line",
-      aria: "none",
-    });
-    gsap.set(split.lines, { y: "-114%" });
-    return split;
-  });
+/** GSAP does not treat `webkitBackdropFilter` as a valid tween prop — set blur via CSS. */
+function setBackdropFilterCss(el: HTMLElement, value: string) {
+  el.style.setProperty("backdrop-filter", value);
+  el.style.setProperty("-webkit-backdrop-filter", value);
 }
 
-function flatLines(splits: SplitText[]): HTMLElement[] {
-  return splits.flatMap((s) => s.lines);
+/** Whole-node reveals only (no SplitText) so React never fights mutated text DOM. */
+function prepTextRevealTargets(els: HTMLElement[]): HTMLElement[] {
+  if (!els.length) return [];
+  els.forEach((el) => {
+    const blockish =
+      el.tagName === "P" ||
+      el.tagName === "H1" ||
+      el.tagName === "H2" ||
+      el.tagName === "H3";
+    gsap.set(el, {
+      display: blockish ? "block" : "inline-block",
+      overflow: "hidden",
+      verticalAlign: "top",
+      willChange: "transform",
+    });
+  });
+  gsap.set(els, { yPercent: 110 });
+  return els;
+}
+
+function concatTargets(
+  header: HTMLElement[],
+  main: HTMLElement[],
+  footer: HTMLElement[],
+): HTMLElement[] {
+  return [...header, ...main, ...footer];
 }
 
 function resetSubmenus(rows: MxdMenuGsapMenuRow[]): void {
@@ -123,12 +136,17 @@ export function bindMxdMenuGsap(
     menuRows,
   } = el;
 
-  const headerSplits = splitAndHide(headerSplitElements);
-  const mainMenuSplits = splitAndHide(mainMenuLinkSpans);
-  const footerSplits = splitAndHide(footerSplitElements);
-  // Match legacy SplitText line-mask feel for contact column.
+  const headerTargets = prepTextRevealTargets(headerSplitElements);
+  const mainTargets = prepTextRevealTargets(mainMenuLinkSpans);
+  const footerTargets = prepTextRevealTargets(footerSplitElements);
+  const allTextTargets = concatTargets(
+    headerTargets,
+    mainTargets,
+    footerTargets,
+  );
+
   gsap.set(contactAnchors, { display: "block", overflow: "hidden" });
-  gsap.set(contactRevealTargets, { display: "inline-block", y: "-114%" });
+  gsap.set(contactRevealTargets, { display: "inline-block", yPercent: 110 });
 
   gsap.set(menuDividers, { clipPath: "inset(0% 100% 0% 0%)" });
   gsap.set(menuArrows, { opacity: 0 });
@@ -141,8 +159,8 @@ export function bindMxdMenuGsap(
   });
   gsap.set(menuBackdrop, {
     background: "rgba(var(--base-rgb), 0)",
-    backdropFilter: "blur(0px)",
   });
+  setBackdropFilterCss(menuBackdrop, "blur(0px)");
   gsap.set(menuOverlayContainer, { yPercent: -50 });
 
   let isMenuOpen = false;
@@ -156,24 +174,23 @@ export function bindMxdMenuGsap(
 
   const resetMenu = () => {
     killTimeline();
+    gsap.set([menuOverlay, menuOverlayContainer, menuBackdrop], {
+      willChange: "auto",
+    });
     gsap.set(menuOverlay, {
       clipPath: "polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)",
     });
     gsap.set(menuBackdrop, {
       background: "rgba(var(--base-rgb), 0)",
-      backdropFilter: "blur(0px)",
     });
+    setBackdropFilterCss(menuBackdrop, "blur(0px)");
     gsap.set(menuOverlayContainer, { yPercent: -50 });
     if (menuMediaWrapper) {
       gsap.set(menuMediaWrapper, { scale: 1.4 });
     }
 
-    flatLines([
-      ...headerSplits,
-      ...mainMenuSplits,
-      ...footerSplits,
-    ]).forEach((line) => gsap.set(line, { y: "-114%" }));
-    gsap.set(contactRevealTargets, { display: "inline-block", y: "-114%" });
+    gsap.set(allTextTargets, { yPercent: 110 });
+    gsap.set(contactRevealTargets, { display: "inline-block", yPercent: 110 });
     gsap.set(menuDividers, { clipPath: "inset(0% 100% 0% 0%)" });
     gsap.set(menuArrows, { opacity: 0 });
 
@@ -208,9 +225,6 @@ export function bindMxdMenuGsap(
       .to(
         menuBackdrop,
         {
-          // Animate only opacity-equivalent (background alpha). The
-          // backdrop-filter value itself is removed in the final .call()
-          // so we never re-rasterize a varying blur radius.
           background: "rgba(var(--base-rgb), 0)",
           duration: 0.35,
           ease: "power2.in",
@@ -227,21 +241,15 @@ export function bindMxdMenuGsap(
         "<",
       )
       .call(() => {
-        // Drop the backdrop-filter in one shot at the end, plus release
-        // will-change so the compositor can recycle the GPU tiles.
-        gsap.set(menuBackdrop, {
-          backdropFilter: "blur(0px)",
-          webkitBackdropFilter: "blur(0px)",
-        });
+        setBackdropFilterCss(menuBackdrop, "blur(0px)");
         gsap.set([menuOverlay, menuOverlayContainer, menuBackdrop], {
           willChange: "auto",
         });
-        flatLines([
-          ...headerSplits,
-          ...mainMenuSplits,
-          ...footerSplits,
-        ]).forEach((line) => gsap.set(line, { y: "-114%" }));
-        gsap.set(contactRevealTargets, { display: "inline-block", y: "-114%" });
+        gsap.set(allTextTargets, { yPercent: 110 });
+        gsap.set(contactRevealTargets, {
+          display: "inline-block",
+          yPercent: 110,
+        });
         gsap.set(menuDividers, { clipPath: "inset(0% 100% 0% 0%)" });
         gsap.set(menuArrows, { opacity: 0 });
         if (menuMediaWrapper) {
@@ -274,26 +282,15 @@ export function bindMxdMenuGsap(
       hamburgerIcon?.classList.add("active");
       const isMobile = window.matchMedia("(max-width: 1024px)").matches;
 
-      // Promote layers to the compositor before the animation starts -
-      // avoids the first-frame stutter while the browser allocates GPU
-      // tiles for the elements that are about to move/clip/blur.
       gsap.set([menuOverlay, menuOverlayContainer, menuBackdrop], {
         willChange: "transform, clip-path, opacity",
       });
 
-      // Apply the (expensive) backdrop-filter blur *instantly* on the
-      // first frame instead of animating its radius. Animating the blur
-      // pixel radius re-rasterizes the page underneath every frame and
-      // is the main cause of choppy menu opens.
-      gsap.set(menuBackdrop, {
-        backdropFilter: isMobile ? "blur(4px)" : "blur(6px)",
-        webkitBackdropFilter: isMobile ? "blur(4px)" : "blur(6px)",
-      });
+      setBackdropFilterCss(
+        menuBackdrop,
+        isMobile ? "blur(4px)" : "blur(6px)",
+      );
 
-      // Phase 1: overlay snap. clipPath + transform run alone so the GPU
-      // isn't fighting 30 simultaneous split-line animations during the
-      // heaviest paint. Slightly longer duration than the snap-mode
-      // version feels more natural to the eye.
       tl.to(menuBackdrop, {
         background: isMobile
           ? "rgba(var(--base-rgb), 0.6)"
@@ -320,7 +317,6 @@ export function bindMxdMenuGsap(
           "<",
         );
 
-      // Phase 2: once the overlay is in place, run the content reveal. */
       const phase2 = 0.5;
 
       if (menuMediaWrapper) {
@@ -336,8 +332,8 @@ export function bindMxdMenuGsap(
       }
 
       tl.to(
-        mainMenuSplits.flatMap((s) => s.lines),
-        { y: "0%", stagger: 0.06, ease: "power3.out", duration: 0.5 },
+        mainTargets,
+        { yPercent: 0, stagger: 0.06, ease: "power3.out", duration: 0.5 },
         phase2,
       )
         .to(
@@ -356,18 +352,18 @@ export function bindMxdMenuGsap(
           phase2 + 0.1,
         )
         .to(
-          headerSplits.flatMap((s) => s.lines),
-          { y: "0%", stagger: 0.04, ease: "power3.out", duration: 0.45 },
+          headerTargets,
+          { yPercent: 0, stagger: 0.04, ease: "power3.out", duration: 0.45 },
           phase2 + 0.05,
         )
         .to(
           contactRevealTargets,
-          { y: "0%", stagger: 0.04, ease: "power3.out", duration: 0.45 },
+          { yPercent: 0, stagger: 0.04, ease: "power3.out", duration: 0.45 },
           phase2 + 0.15,
         )
         .to(
-          footerSplits.flatMap((s) => s.lines),
-          { y: "0%", stagger: 0.04, ease: "power3.out", duration: 0.45 },
+          footerTargets,
+          { yPercent: 0, stagger: 0.04, ease: "power3.out", duration: 0.45 },
           phase2 + 0.2,
         );
 
@@ -423,30 +419,46 @@ export function bindMxdMenuGsap(
     }
   };
 
-  const onNavLinkClick = (e: MouseEvent) => {
+  /**
+   * Instant reset on in-menu navigation. `closeMenuAnimated` races Next.js:
+   * the route commits while tweens still run → React removeChild errors.
+   * Capture runs before target/bubble so GSAP is cleared before Link handles the click.
+   */
+  const onNavLinkCapture = (e: MouseEvent) => {
     const target = e.target instanceof Element ? e.target : null;
     const anchor = target?.closest("a[href]");
     if (!anchor || !nav.contains(anchor)) return;
     const href = anchor.getAttribute("href");
     if (!href || href === "#0" || href.startsWith("#")) return;
-    closeMenuAnimated();
+    resetMenu();
   };
 
   toggle.addEventListener("click", onToggleClick);
+  nav.addEventListener("click", onNavLinkCapture, true);
   nav.addEventListener("click", onAccordionClick, true);
-  nav.addEventListener("click", onNavLinkClick);
 
   const dispose = () => {
     toggle.removeEventListener("click", onToggleClick);
+    nav.removeEventListener("click", onNavLinkCapture, true);
     nav.removeEventListener("click", onAccordionClick, true);
-    nav.removeEventListener("click", onNavLinkClick);
     killTimeline();
     resetSubmenus(menuRows);
-    [
-      ...headerSplits,
-      ...mainMenuSplits,
-      ...footerSplits,
-    ].forEach((s) => s.revert());
+    gsap.killTweensOf([
+      ...allTextTargets,
+      ...contactRevealTargets,
+      ...menuDividers,
+      ...menuArrows,
+      menuOverlay,
+      menuOverlayContainer,
+      menuBackdrop,
+      menuMediaWrapper,
+    ].filter(Boolean));
+    menuBackdrop.style.removeProperty("backdrop-filter");
+    menuBackdrop.style.removeProperty("-webkit-backdrop-filter");
+    gsap.set(allTextTargets, { clearProps: "transform,overflow,display,willChange" });
+    gsap.set(contactRevealTargets, {
+      clearProps: "transform,display,willChange",
+    });
     lenis?.start();
   };
 

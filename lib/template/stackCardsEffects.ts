@@ -2,9 +2,8 @@
 
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText.js";
 
-gsap.registerPlugin(ScrollTrigger, SplitText);
+gsap.registerPlugin(ScrollTrigger);
 
 export type StackCardMedia = HTMLImageElement | HTMLVideoElement;
 
@@ -43,16 +42,18 @@ function getBaseSize(): number {
   return Math.min(w - 60, 390);
 }
 
+/** Whole title block only — no SplitText inside React-managed headings. */
 function animateContentIn(
-  titleLines: HTMLElement[],
+  titleEl: HTMLElement | null,
   description: HTMLElement | null,
 ): void {
-  gsap.to(titleLines, {
-    y: "0%",
-    duration: 0.75,
-    ease: "common",
-    stagger: { amount: 0.15 },
-  });
+  if (titleEl) {
+    gsap.to(titleEl, {
+      yPercent: 0,
+      duration: 0.75,
+      ease: "common",
+    });
+  }
   if (description) {
     gsap.to(description, {
       y: 0,
@@ -65,13 +66,15 @@ function animateContentIn(
 }
 
 function animateContentOut(
-  titleLines: HTMLElement[],
+  titleEl: HTMLElement | null,
   description: HTMLElement | null,
 ): void {
-  gsap.to(titleLines, { y: "100%", duration: 0.5, ease: "common" });
+  if (titleEl) {
+    gsap.to(titleEl, { yPercent: 100, duration: 0.5, ease: "common" });
+  }
   if (description) {
     gsap.to(description, {
-      y: "40px",
+      y: 40,
       opacity: 0,
       duration: 0.1,
       ease: "common",
@@ -120,167 +123,180 @@ export function initStackCardsEffects(refs: StackCardsRefs): () => void {
   let cleanup: (() => void) | null = null;
 
   const setup = () => {
-  const cards = refs.cards.filter(Boolean);
-  if (!cards.length) return () => {};
+    const cards = refs.cards.filter(Boolean);
+    if (!cards.length) return () => {};
 
-  const splitInstances: SplitText[] = [];
-  const cardTitleLines: HTMLElement[][] = cards.map(() => []);
-
-  refs.cardTitleParagraphs.forEach((titleEl, index) => {
-    if (!titleEl) return;
-    const split = SplitText.create(titleEl, {
-      type: "words, lines",
-      mask: "lines",
-      linesClass: "line",
+    refs.cardTitleParagraphs.forEach((titleEl) => {
+      if (!titleEl) return;
+      gsap.set(titleEl, {
+        overflow: "hidden",
+        display: "block",
+        willChange: "transform",
+        yPercent: 100,
+      });
     });
-    splitInstances.push(split);
-    cardTitleLines[index] = split.lines as HTMLElement[];
-  });
 
-  refs.cardDescriptions.forEach((descr, index) => {
-    if (index > 0 && descr) gsap.set(descr, { y: "40px", opacity: 0 });
-  });
-  cardTitleLines.forEach((lines, index) => {
-    if (index > 0 && lines.length) gsap.set(lines, { y: "100%" });
-  });
-
-  const introImageWrapper = refs.cardImageWrappers[0];
-  const introImage = refs.cardMedias[0];
-  const introCover = refs.cardCovers[0];
-  const introMarquee = refs.introMarquee;
-  if (!introImageWrapper || !introImage || !introCover || !introMarquee) {
-    splitInstances.forEach((s) => s.revert());
-    return () => {};
-  }
-
-  let baseSize = getBaseSize();
-  let lastProgress = 0;
-  let introRevealed = false;
-
-  const updateClip = (progress: number) => {
-    const cutY = ((window.innerHeight - baseSize) / 2) * (1 - progress);
-    const cutX = ((window.innerWidth - baseSize) / 2) * (1 - progress);
-    gsap.set(introImageWrapper, {
-      clipPath: `inset(${cutY}px ${cutX}px ${cutY}px ${cutX}px)`,
+    refs.cardDescriptions.forEach((descr, index) => {
+      if (index > 0 && descr) gsap.set(descr, { y: 40, opacity: 0 });
     });
-  };
 
-  updateClip(0);
-  gsap.set(introImage, { scale: 0.9 });
-  gsap.set(introCover, { opacity: 0 });
+    const introImageWrapper = refs.cardImageWrappers[0];
+    const introImage = refs.cardMedias[0];
+    const introCover = refs.cardCovers[0];
+    const introMarquee = refs.introMarquee;
+    if (!introImageWrapper || !introImage || !introCover || !introMarquee) {
+      return () => {};
+    }
 
-  const triggers: ScrollTrigger[] = [];
+    let baseSize = getBaseSize();
+    let lastProgress = 0;
+    let introRevealed = false;
 
-  triggers.push(
-    ScrollTrigger.create({
-      trigger: cards[0],
-      start: "top top",
-      end: "+=300vh",
-      onUpdate: (self) => {
-        lastProgress = self.progress;
-        updateClip(lastProgress);
+    const updateClip = (progress: number) => {
+      const cutY = ((window.innerHeight - baseSize) / 2) * (1 - progress);
+      const cutX = ((window.innerWidth - baseSize) / 2) * (1 - progress);
+      gsap.set(introImageWrapper, {
+        clipPath: `inset(${cutY}px ${cutX}px ${cutY}px ${cutX}px)`,
+      });
+    };
 
-        const innerImgScale = 0.9 + self.progress * 0.1;
-        const innerCoverOpacity = self.progress;
-        gsap.set(introImage, { scale: innerImgScale });
-        gsap.set(introCover, { opacity: innerCoverOpacity });
+    updateClip(0);
+    gsap.set(introImage, { scale: 0.9 });
+    gsap.set(introCover, { opacity: 0 });
 
-        if (innerCoverOpacity >= 0.4 && innerCoverOpacity <= 0.75) {
-          const fadeProgress = (innerCoverOpacity - 0.4) / (0.75 - 0.4);
-          gsap.set(introMarquee, { opacity: 1 - fadeProgress });
-        } else if (innerCoverOpacity < 0.4) {
-          gsap.set(introMarquee, { opacity: 1 });
-        } else {
-          gsap.set(introMarquee, { opacity: 0 });
-        }
+    const triggers: ScrollTrigger[] = [];
 
-        if (lastProgress >= 1 && !introRevealed) {
-          introRevealed = true;
-          animateContentIn(cardTitleLines[0] ?? [], refs.cardDescriptions[0] ?? null);
-        }
-        if (lastProgress < 1 && introRevealed) {
-          introRevealed = false;
-          animateContentOut(cardTitleLines[0] ?? [], refs.cardDescriptions[0] ?? null);
-        }
-      },
-    }),
-  );
-
-  cards.forEach((card, index) => {
-    const isLastCard = index === cards.length - 1;
     triggers.push(
       ScrollTrigger.create({
-        trigger: card,
+        trigger: cards[0],
         start: "top top",
-        end: isLastCard ? "+=100vh" : "top top",
-        endTrigger: isLastCard ? undefined : cards[cards.length - 1],
-        pin: true,
-        pinSpacing: isLastCard,
-      }),
-    );
-  });
-
-  cards.forEach((_, index) => {
-    if (index >= cards.length - 1) return;
-    const wrapper = refs.cardWrappers[index];
-    const nextCard = cards[index + 1];
-    if (!wrapper || !nextCard) return;
-    triggers.push(
-      ScrollTrigger.create({
-        trigger: nextCard,
-        start: "top bottom",
-        end: "top top",
+        end: "+=300vh",
         onUpdate: (self) => {
-          gsap.set(wrapper, {
-            scale: 1 - self.progress * 0.15,
-            opacity: 1 - self.progress,
-          });
+          lastProgress = self.progress;
+          updateClip(lastProgress);
+
+          const innerImgScale = 0.9 + self.progress * 0.1;
+          const innerCoverOpacity = self.progress;
+          gsap.set(introImage, { scale: innerImgScale });
+          gsap.set(introCover, { opacity: innerCoverOpacity });
+
+          if (innerCoverOpacity >= 0.4 && innerCoverOpacity <= 0.75) {
+            const fadeProgress = (innerCoverOpacity - 0.4) / (0.75 - 0.4);
+            gsap.set(introMarquee, { opacity: 1 - fadeProgress });
+          } else if (innerCoverOpacity < 0.4) {
+            gsap.set(introMarquee, { opacity: 1 });
+          } else {
+            gsap.set(introMarquee, { opacity: 0 });
+          }
+
+          if (lastProgress >= 1 && !introRevealed) {
+            introRevealed = true;
+            animateContentIn(
+              refs.cardTitleParagraphs[0] ?? null,
+              refs.cardDescriptions[0] ?? null,
+            );
+          }
+          if (lastProgress < 1 && introRevealed) {
+            introRevealed = false;
+            animateContentOut(
+              refs.cardTitleParagraphs[0] ?? null,
+              refs.cardDescriptions[0] ?? null,
+            );
+          }
         },
       }),
     );
-  });
 
-  cards.forEach((card, index) => {
-    if (index === 0) return;
-    const media = refs.cardMedias[index];
-    if (!media) return;
-    triggers.push(
-      ScrollTrigger.create({
-        trigger: card,
-        start: "top bottom",
-        end: "top top",
-        onUpdate: (self) => {
-          gsap.set(media, { scale: 2 - self.progress });
-        },
-      }),
-    );
-  });
+    cards.forEach((card, index) => {
+      const isLastCard = index === cards.length - 1;
+      triggers.push(
+        ScrollTrigger.create({
+          trigger: card,
+          start: "top top",
+          end: isLastCard ? "+=100vh" : "top top",
+          endTrigger: isLastCard ? undefined : cards[cards.length - 1],
+          pin: true,
+          pinSpacing: isLastCard,
+        }),
+      );
+    });
 
-  cards.forEach((card, index) => {
-    if (index === 0) return;
-    triggers.push(
-      ScrollTrigger.create({
-        trigger: card,
-        start: "top top",
-        onEnter: () =>
-          animateContentIn(cardTitleLines[index] ?? [], refs.cardDescriptions[index] ?? null),
-        onLeaveBack: () =>
-          animateContentOut(cardTitleLines[index] ?? [], refs.cardDescriptions[index] ?? null),
-      }),
-    );
-  });
+    cards.forEach((_, index) => {
+      if (index >= cards.length - 1) return;
+      const wrapper = refs.cardWrappers[index];
+      const nextCard = cards[index + 1];
+      if (!wrapper || !nextCard) return;
+      triggers.push(
+        ScrollTrigger.create({
+          trigger: nextCard,
+          start: "top bottom",
+          end: "top top",
+          onUpdate: (self) => {
+            gsap.set(wrapper, {
+              scale: 1 - self.progress * 0.15,
+              opacity: 1 - self.progress,
+            });
+          },
+        }),
+      );
+    });
 
-  const onResize = () => {
-    baseSize = getBaseSize();
-    updateClip(lastProgress);
-    ScrollTrigger.refresh();
-  };
-  window.addEventListener("resize", onResize);
+    cards.forEach((card, index) => {
+      if (index === 0) return;
+      const media = refs.cardMedias[index];
+      if (!media) return;
+      triggers.push(
+        ScrollTrigger.create({
+          trigger: card,
+          start: "top bottom",
+          end: "top top",
+          onUpdate: (self) => {
+            gsap.set(media, { scale: 2 - self.progress });
+          },
+        }),
+      );
+    });
+
+    cards.forEach((card, index) => {
+      if (index === 0) return;
+      triggers.push(
+        ScrollTrigger.create({
+          trigger: card,
+          start: "top top",
+          onEnter: () =>
+            animateContentIn(
+              refs.cardTitleParagraphs[index] ?? null,
+              refs.cardDescriptions[index] ?? null,
+            ),
+          onLeaveBack: () =>
+            animateContentOut(
+              refs.cardTitleParagraphs[index] ?? null,
+              refs.cardDescriptions[index] ?? null,
+            ),
+        }),
+      );
+    });
+
+    const onResize = () => {
+      baseSize = getBaseSize();
+      updateClip(lastProgress);
+      ScrollTrigger.refresh();
+    };
+    window.addEventListener("resize", onResize);
 
     return () => {
       window.removeEventListener("resize", onResize);
       triggers.forEach((t) => t.kill());
-      splitInstances.forEach((s) => s.revert());
+      refs.cardTitleParagraphs.forEach((t) => {
+        if (!t) return;
+        gsap.killTweensOf(t);
+        gsap.set(t, { clearProps: "transform,overflow,willChange" });
+      });
+      refs.cardDescriptions.forEach((d) => {
+        if (!d) return;
+        gsap.killTweensOf(d);
+        gsap.set(d, { clearProps: "transform,opacity,willChange" });
+      });
     };
   };
 

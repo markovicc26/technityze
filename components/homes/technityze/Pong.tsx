@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -505,7 +505,9 @@ export default function Pong() {
   //      the same scroll range, so it climbs over the receding Pong.
   // pinSpacing: true keeps the next section from appearing too early
   // (it provides the scroll distance the slide animation needs).
-  useEffect(() => {
+  // useLayoutEffect so pin.kill() runs before React removes pinned DOM;
+  // useEffect cleanup runs after commit and leaves pin wrappers → removeChild errors.
+  useLayoutEffect(() => {
     if (typeof window === "undefined") return;
     if (window.innerWidth < 1200) return;
     gsap.registerPlugin(ScrollTrigger);
