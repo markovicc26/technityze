@@ -36,6 +36,13 @@ const MARQUEE: MarqueeItem[] = [
     tag: "WordPress · Lead gen",
   },
   {
+    src: "/img/technityze/work/pingala-saas-marquee.jpg",
+    alt: "Pingala internal SaaS — login, calendar, and finances",
+    w: 1024,
+    h: 686,
+    tag: "React Native · SaaS",
+  },
+  {
     src: "/img/technityze/work/astroskop.png",
     alt: "Astroskop",
     w: 1280,
@@ -43,25 +50,11 @@ const MARQUEE: MarqueeItem[] = [
     tag: "Next.js · Editorial",
   },
   {
-    src: "/img/technityze/work/showcase-3.png",
-    alt: "Operations app dashboard",
-    w: 1280,
-    h: 800,
+    src: "/img/technityze/work/operations-vigo-hero.jpg",
+    alt: "Vigo operations app — sign-in, calendar, and job forms",
+    w: 1024,
+    h: 686,
     tag: "React Native · SaaS",
-  },
-  {
-    src: "/img/technityze/work/showcase-1.png",
-    alt: "Operations app calendar",
-    w: 1280,
-    h: 800,
-    tag: "React Native · Scheduling",
-  },
-  {
-    src: "/img/technityze/work/showcase-2.png",
-    alt: "Operations app pipeline",
-    w: 1280,
-    h: 800,
-    tag: "React Native · Pipeline",
   },
 ];
 

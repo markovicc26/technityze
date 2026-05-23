@@ -21,6 +21,9 @@ type Project = {
   outcome: string;
   tags: string[];
   cover: string;
+  /** Intrinsic size of `cover` for next/image (defaults 1280×800). */
+  coverWidth?: number;
+  coverHeight?: number;
   cursorTheme: CursorTheme;
   description: string;
 };
@@ -63,16 +66,18 @@ const PROJECTS: Project[] = [
       "Premium editorial site for astrology content with a custom CMS. Next.js with server-side rendering for SEO, optimised content vault, monetisation through premium readings.",
   },
   {
-    slug: "operations-app",
-    name: "Operations app",
+    slug: "vigo",
+    name: "Vigo",
     href: "#",
     external: false,
-    outcome: "In production, 3 modules shipped",
+    outcome: "In production, iOS and Android",
     tags: ["React Native", "Node.js", "SaaS", "Dashboard"],
-    cover: "/img/technityze/work/showcase-3.png",
+    cover: "/img/technityze/work/operations-vigo-hero.jpg",
+    coverWidth: 1024,
+    coverHeight: 686,
     cursorTheme: "black-green",
     description:
-      "Internal operations SaaS for service businesses. Three modules in production: appointment management, sales pipeline, KPI dashboard. React Native mobile + Node.js backend, ongoing deployment.",
+      "Vigo is built for crews who live between vans, clients, and half-finished rooms—not behind a desk. It turns the noise of a service day into something calm on a phone: people know what the team agreed, what still needs a human touch, and who carries the next step. For flooring and similar trades it feels less like generic software and more like a familiar rhythm translated into something everyone on site can trust.",
   },
 ];
 
@@ -182,11 +187,12 @@ export default function ProjectsGrid() {
                       onClick={() => openModal(p)}
                     >
                       <Image
+                        key={p.cover}
                         className="technityze-work-card__img"
                         alt={`${p.name} preview`}
                         src={p.cover}
-                        width={1280}
-                        height={800}
+                        width={p.coverWidth ?? 1280}
+                        height={p.coverHeight ?? 800}
                       />
                     </button>
                     <div className="mxd-project-item__caption technityze-work-card__caption">
@@ -309,10 +315,11 @@ function ProjectModal({
         <div className="technityze-work-modal__grid">
           <div className="technityze-work-modal__media">
             <Image
+              key={project.cover}
               src={project.cover}
               alt={`${project.name} screenshot`}
-              width={1280}
-              height={800}
+              width={project.coverWidth ?? 1280}
+              height={project.coverHeight ?? 800}
               className="technityze-work-modal__img"
             />
           </div>
