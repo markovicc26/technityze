@@ -62,7 +62,7 @@ export default function ContactForm() {
       setFeedback(
         fromServer
           ? err.message
-          : "Sending failed. Email info@technityze.com directly or try again.",
+          : "Sending failed. Use the email on this page to reach us directly, or try again.",
       );
     }
   }

@@ -66,13 +66,17 @@ export async function POST(req: Request) {
 
   const host = process.env.ZOHO_SMTP_HOST?.trim() || "smtp.zoho.com";
   const port = Number(process.env.ZOHO_SMTP_PORT?.trim() || "465");
-  const user = process.env.ZOHO_SMTP_USER?.trim();
+  /** SMTP login (must match the account / app password you created in Zoho). */
+  const authUser = process.env.ZOHO_SMTP_USER?.trim();
   const pass = process.env.ZOHO_SMTP_PASS?.trim();
+  /** Optional “From” address if it differs from auth (e.g. alias). Defaults to auth user. */
+  const fromAddress =
+    process.env.ZOHO_SMTP_FROM?.trim() || authUser || "info@technityze.com";
   const rawNotify = process.env.CONTACT_NOTIFY_EMAIL?.trim();
   const to =
     rawNotify && rawNotify.length > 0 ? rawNotify : "info@technityze.com";
 
-  if (!user || !pass) {
+  if (!authUser || !pass) {
     console.error(
       "[api/contact] Missing ZOHO_SMTP_USER or ZOHO_SMTP_PASS env vars.",
     );
@@ -93,7 +97,7 @@ export async function POST(req: Request) {
     port,
     secure,
     ...(useStartTls ? { requireTLS: true } : {}),
-    auth: { user, pass },
+    auth: { user: authUser, pass },
   });
 
   const subject = `${projectType} — ${name}`;
@@ -115,7 +119,7 @@ export async function POST(req: Request) {
 
   try {
     await transporter.sendMail({
-      from: `"Technityze site" <${user}>`,
+      from: `"Technityze site" <${fromAddress}>`,
       to,
       replyTo: email,
       subject,
@@ -127,7 +131,8 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Could not send message. Try again or email info@technityze.com.",
+        error:
+          "Could not send message. Try again or use the email on our contact page.",
       },
       { status: 502 },
     );
