@@ -3,21 +3,9 @@
 import { type FormEvent, useState } from "react";
 import { CommonLoadItem } from "@/components/animations/CommonLoadAnimation";
 import TextScramble from "@/components/animations/TextScramble";
+import { CONTACT_PROJECT_TYPES } from "@/lib/contactProjectTypes";
 
 type FormStatus = "idle" | "sending" | "success" | "error";
-
-/* FormSubmit.co AJAX endpoint - no API key, no env var. Same gateway as
-   the live technityze.com site. We'll swap this for Mailgun later. */
-const FORM_SUBMIT_ENDPOINT =
-  "https://formsubmit.co/ajax/contact@technityze.com";
-
-const PROJECT_TYPES = [
-  "Website",
-  "Web application",
-  "Mobile application",
-  "SEO and content",
-  "Internal system / automation",
-] as const;
 
 export default function ContactForm() {
   const [status, setStatus] = useState<FormStatus>("idle");
@@ -31,25 +19,50 @@ export default function ContactForm() {
     setFeedback("");
 
     const form = e.currentTarget;
-    const formData = new FormData(form);
-    formData.set("_subject", "New website inquiry");
-    formData.set("_template", "table");
-    formData.set("_captcha", "false");
+    const fd = new FormData(form);
+
+    const name = String(fd.get("name") ?? "").trim();
+    const email = String(fd.get("email") ?? "").trim();
+    const project_type = String(fd.get("project_type") ?? "").trim();
+    const message = String(fd.get("message") ?? "").trim();
+    const _company = String(fd.get("_company") ?? "").trim();
 
     try {
-      const res = await fetch(FORM_SUBMIT_ENDPOINT, {
+      const res = await fetch("/api/contact", {
         method: "POST",
-        body: formData,
-        headers: { Accept: "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          project_type,
+          message,
+          _company,
+        }),
       });
-      if (!res.ok) throw new Error("submit failed");
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+      };
+      if (!res.ok || !data.ok) {
+        throw new Error(
+          typeof data.error === "string" && data.error.length > 0
+            ? data.error
+            : "submit failed",
+        );
+      }
       setStatus("success");
       setFeedback("Thanks. We'll get back to you within one business day.");
       form.reset();
-    } catch {
+    } catch (err) {
       setStatus("error");
+      const fromServer =
+        err instanceof Error &&
+        err.message &&
+        err.message !== "submit failed";
       setFeedback(
-        "Sending failed. Email contact@technityze.com directly or try again.",
+        fromServer
+          ? err.message
+          : "Sending failed. Email info@technityze.com directly or try again.",
       );
     }
   }
@@ -77,6 +90,26 @@ export default function ContactForm() {
           id="contact-form"
           onSubmit={onSubmit}
         >
+          {/* Honeypot — leave hidden; bots that fill it get a silent OK from the API */}
+          <input
+            type="text"
+            name="_company"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="visually-hidden"
+            style={{
+              position: "absolute",
+              width: 1,
+              height: 1,
+              padding: 0,
+              margin: -1,
+              overflow: "hidden",
+              clip: "rect(0,0,0,0)",
+              whiteSpace: "nowrap",
+              border: 0,
+            }}
+          />
           <div className="container-fluid p-0">
             <div className="row gx-0">
               <CommonLoadItem index={0}>
@@ -115,7 +148,7 @@ export default function ContactForm() {
                     <option value="" disabled>
                       Project type*
                     </option>
-                    {PROJECT_TYPES.map((t) => (
+                    {CONTACT_PROJECT_TYPES.map((t) => (
                       <option key={t} value={t}>
                         {t}
                       </option>
