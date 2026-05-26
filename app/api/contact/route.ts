@@ -96,7 +96,7 @@ export async function POST(req: Request) {
     auth: { user, pass },
   });
 
-  const subject = `[technityze.com] ${projectType} — ${name}`;
+  const subject = `${projectType} — ${name}`;
   const text = [
     `Name: ${name}`,
     `Email: ${email}`,
