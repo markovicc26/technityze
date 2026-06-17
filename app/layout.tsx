@@ -77,7 +77,7 @@ export default async function RootLayout({
 }>) {
   const cookieStore = await cookies();
   const cookieTheme = cookieStore.get("template.theme")?.value;
-  const initialTheme = cookieTheme === "dark" ? "dark" : "light";
+  const initialTheme = cookieTheme === "light" ? "light" : "dark";
 
   return (
     <html
