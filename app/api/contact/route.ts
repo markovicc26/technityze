@@ -71,10 +71,10 @@ export async function POST(req: Request) {
   const pass = process.env.ZOHO_SMTP_PASS?.trim();
   /** Optional “From” address if it differs from auth (e.g. alias). Defaults to auth user. */
   const fromAddress =
-    process.env.ZOHO_SMTP_FROM?.trim() || authUser || "info@technityze.com";
+    process.env.ZOHO_SMTP_FROM?.trim() || authUser || "contact@technityze.com";
   const rawNotify = process.env.CONTACT_NOTIFY_EMAIL?.trim();
   const to =
-    rawNotify && rawNotify.length > 0 ? rawNotify : "info@technityze.com";
+    rawNotify && rawNotify.length > 0 ? rawNotify : "contact@technityze.com";
 
   if (!authUser || !pass) {
     console.error(
